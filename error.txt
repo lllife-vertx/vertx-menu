@@ -1,0 +1,37 @@
+log4j:WARN No appenders could be found for logger (io.netty.util.internal.logging.InternalLoggerFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+Dec 29, 2013 11:08:02 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:02 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
+Dec 29, 2013 11:08:30 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Module com.ko.emenu~VertxService~1.0-SNAPSHOT has changed, reloading it.
+Dec 29, 2013 11:08:30 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:30 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
+Dec 29, 2013 11:08:32 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Module com.ko.emenu~VertxService~1.0-SNAPSHOT has changed, reloading it.
+Dec 29, 2013 11:08:32 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:32 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
+Dec 29, 2013 11:08:53 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Module com.ko.emenu~VertxService~1.0-SNAPSHOT has changed, reloading it.
+Dec 29, 2013 11:08:53 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:53 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
+Dec 29, 2013 11:08:55 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Module com.ko.emenu~VertxService~1.0-SNAPSHOT has changed, reloading it.
+Dec 29, 2013 11:08:55 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:55 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
+Dec 29, 2013 11:08:56 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Module com.ko.emenu~VertxService~1.0-SNAPSHOT has changed, reloading it.
+Dec 29, 2013 11:08:56 PM com.google.code.morphia.logging.MorphiaLoggerFactory chooseLoggerFactory
+INFO: LoggerImplFactory set to com.google.code.morphia.logging.jdk.JDKLoggerFactory
+Dec 29, 2013 11:08:56 PM org.vertx.java.core.logging.impl.JULLogDelegate info
+INFO: Start 0.0.0.0 @8877
