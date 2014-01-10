@@ -109,14 +109,8 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
             @Override
             void handle(HttpServerRequest request) {
 
-
                 // Expect multipart/formdata
                 request.expectMultiPart(true)
-
-                Console.println(request.params().size())
-                Console.println(request.formAttributes().size())
-                Console.println(request.getProperties().size())
-
 
                 // Register upload hander
                 request.uploadHandler(new Handler<HttpServerFileUpload>() {
@@ -124,25 +118,6 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                     void handle(HttpServerFileUpload upload) {
 
                         def currentFilePath = ""
-
-                        // Register exception hander.
-                        upload.exceptionHandler(new Handler<Throwable>() {
-                            @Override
-                            void handle(Throwable throwable) {
-                                def rs = new Result(success: false, message: throwable.getMessage())
-                                request.response().end(rs.toString())
-                            }
-                        })
-
-                        // Not work, can't read body.
-                        upload.dataHandler(new Handler<Buffer>() {
-                            @Override
-                            void handle(Buffer buffer) {
-                                def body = buffer.getString(0, buffer.length())
-                                Console.println("== Body ==")
-                                Console.println(body)
-                            }
-                        })
 
                         // End request hander.
                         upload.endHandler(new Handler<Void>() {
@@ -158,7 +133,10 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                                 info.path = currentFilePath
 
                                 def rs = info.$save()
-                                request.response().end(rs.toString())
+
+                                try {
+                                    request.response().end(rs.toString())
+                                } catch (e) { }
                             }
                         })
 
@@ -170,14 +148,6 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                     }
                 })
 
-                // Register exception hander.
-                request.exceptionHandler(new Handler<Throwable>() {
-                    @Override
-                    void handle(Throwable throwable) {
-                        def rs = new Result(success: false, message: throwable.getMessage())
-                        request.response().end(rs.toString())
-                    }
-                })
             }
         }
     }
