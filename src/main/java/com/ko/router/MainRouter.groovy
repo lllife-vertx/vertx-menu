@@ -23,7 +23,7 @@ class MainRouter extends RouteMatcher {
         this.post("/product", product.$add())
         this.put("/product", product.$add())
         this.post("/product/query", product.$byExample())
-        //this.post("/test", null)
+        this.post("/product/up", product.$upload())
 
         this.noMatch(new Handler<HttpServerRequest>() {
             @Override
