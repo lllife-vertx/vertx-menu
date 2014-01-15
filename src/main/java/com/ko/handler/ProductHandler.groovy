@@ -91,7 +91,8 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                         String json = buffer.getString(0, buffer.length())
 
                         // create object from json
-                        ProductInfo info = ProductInfo.$fromJson(json)
+                        def map = ProductInfo.$fromJson(json)
+//                        def info = BaseEntity.$mapToObject(map, new ProductInfo())
                         info._id = info.identifier != null ? new ObjectId(info.identifier) : null
 
                         // save and return result

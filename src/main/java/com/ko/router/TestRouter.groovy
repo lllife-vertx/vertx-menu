@@ -2,7 +2,7 @@
 package com.ko.router
 
 import com.ko.model.Connector
-import com.ko.model.Customer
+import com.ko.model.test.Customer
 import com.ko.model.Result
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper

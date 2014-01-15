@@ -1,6 +1,8 @@
 package com.ko.router
 
+import com.ko.handler.CategoryHander
 import com.ko.handler.ProductHandler
+import com.ko.handler.TestHandler
 import com.ko.model.Connector
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.HttpServerRequest
@@ -15,7 +17,6 @@ class MainRouter extends RouteMatcher {
 
     MainRouter() {
         super();
-
         // product
         def product = new ProductHandler()
         this.get("/product", product.$all())
@@ -24,6 +25,16 @@ class MainRouter extends RouteMatcher {
         this.put("/product", product.$add())
         this.post("/product/query", product.$byExample())
         this.post("/product/up", product.$upload())
+
+        // category
+        def category = new CategoryHander()
+        this.get("/category", category.$all())
+        this.post("/category", category.$add())
+        this.post("/category/query", category.$byExample())
+
+        // test
+        def test = new TestHandler()
+        this.get("/test/:name", test.$create())
 
         this.noMatch(new Handler<HttpServerRequest>() {
             @Override

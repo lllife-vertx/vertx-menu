@@ -9,6 +9,7 @@ class Result {
     boolean success;
     String message;
     String id;
+    Object data;
 
     def String toString(){
         def jsonString = JsonOutput.toJson(this)
