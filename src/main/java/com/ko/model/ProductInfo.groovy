@@ -3,9 +3,14 @@ package com.ko.model
  * Created by recovery on 12/29/13.
  */
 class ProductInfo extends BaseEntity<ProductInfo> {
-
     String name;
+    String productId;
     String description;
+
+    double primaryPrice;
+    double promotionPrice;
+    double memberPrice;
+
     String colorId;
 
     List<String> imageIds = new ArrayList<String>();

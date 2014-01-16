@@ -1,6 +1,7 @@
 package com.ko.router
 
 import com.ko.handler.CategoryHander
+import com.ko.handler.ImageHandler
 import com.ko.handler.ProductHandler
 import com.ko.handler.TestHandler
 import com.ko.model.Connector
@@ -31,6 +32,12 @@ class MainRouter extends RouteMatcher {
         this.get("/category", category.$all())
         this.post("/category", category.$add())
         this.post("/category/query", category.$byExample())
+
+
+        // image
+        def image = new ImageHandler()
+        this.post("/image/upload", image.$upload())
+        this.get("/image/:id", image.$byId())
 
         // test
         def test = new TestHandler()

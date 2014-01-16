@@ -4,6 +4,7 @@ import com.ko.model.BaseEntity
 import com.ko.model.ImageInfo
 import com.ko.model.ProductInfo
 import com.ko.model.Result
+import com.ko.utility.HeaderUtility
 import groovy.json.JsonOutput
 import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
@@ -87,17 +88,22 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                     @Override
                     void handle(Buffer buffer) {
 
+                        HeaderUtility.allowOrigin(request)
+
                         // extract json string
                         String json = buffer.getString(0, buffer.length())
 
                         // create object from json
-                        def map = ProductInfo.$fromJson(json)
-//                        def info = BaseEntity.$mapToObject(map, new ProductInfo())
+                        ProductInfo info = ProductInfo.$fromJson(json)
                         info._id = info.identifier != null ? new ObjectId(info.identifier) : null
 
                         // save and return result
                         def rs = info.$save()
-                        request.response().end(rs.toString());
+                        rs.data = info
+
+                        // Return
+                        def returnJson = rs.toString()
+                        request.response().end(returnJson)
                     }
                 })
             }
@@ -134,10 +140,9 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                                 info.path = currentFilePath
 
                                 def rs = info.$save()
+                                rs.data = rs;
 
-                                try {
-                                    request.response().end(rs.toString())
-                                } catch (e) { }
+                                request.response().end(rs.toString())
                             }
                         })
 
