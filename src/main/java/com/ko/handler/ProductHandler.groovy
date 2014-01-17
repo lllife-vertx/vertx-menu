@@ -24,6 +24,8 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
             @Override
             void handle(HttpServerRequest request) {
 
+                HeaderUtility.allowOrigin(request)
+
                 try {
                     def rs = ProductInfo.$findAll(ProductInfo.class)
                     def jsonString = BaseEntity.$toJson(rs)
@@ -44,6 +46,9 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
         return new Handler<HttpServerRequest>() {
             @Override
             void handle(HttpServerRequest request) {
+
+                HeaderUtility.allowOrigin(request)
+
                 def id = request.params().get("id")
                 def objId = new ObjectId(id)
                 def ex = new ProductInfo(_id: objId)
@@ -59,6 +64,9 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
         return new Handler<HttpServerRequest>() {
             @Override
             void handle(HttpServerRequest request) {
+
+                HeaderUtility.allowOrigin(request)
+
                 request.bodyHandler(new Handler<Buffer>() {
                     @Override
                     void handle(Buffer buffer) {
