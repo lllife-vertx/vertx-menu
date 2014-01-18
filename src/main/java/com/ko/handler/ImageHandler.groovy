@@ -1,10 +1,12 @@
 package com.ko.handler
 
 import com.ko.model.ImageInfo
+import com.ko.model.ProductInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.Settings
 import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
+import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.http.HttpServerFileUpload
 import org.vertx.java.core.http.HttpServerRequest
 
@@ -27,14 +29,22 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
                 try {
                     def id = request.params().get("id")
+
                     def objectId = new ObjectId(id)
                     def image = new ImageInfo(_id: objectId)
-                    def returnImage = ImageInfo.$findByExample(image)
+                    //def returnImage = ImageInfo.$findByExample(image)
+                    def returnImage = ImageInfo.$findById(ImageInfo.class, objectId)
 
-                    def base = Settings.getUploadPath()
-                    def full = new File(base, returnImage.path).getPath()
-                    request.response().sendFile(full)
-
+                    // return file
+                    if (request.uri().contains("url")) {
+                        def base = Settings.getUploadPath()
+                        def full = new File(base, returnImage.path).getPath()
+                        request.response().sendFile(full)
+                    } else {
+                        // return info
+                        def jsonString = returnImage.$toJson()
+                        request.response().end(jsonString)
+                    }
                 } catch (Exception ex) {
                     request.response().statusCode = 501
                     request.response().end(ex.getMessage())
@@ -50,7 +60,33 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
     @Override
     Handler<HttpServerRequest> $add() {
-        return null
+        return new Handler<HttpServerRequest>() {
+            @Override
+            void handle(HttpServerRequest request) {
+                request.bodyHandler(new Handler<Buffer>() {
+                    @Override
+                    void handle(Buffer buffer) {
+
+                        HeaderUtility.allowOrigin(request)
+
+                        // extract json string
+                        String json = buffer.getString(0, buffer.length())
+
+                        // create object from json
+                        ImageInfo info = ImageInfo.$fromJson(json)
+                        info._id = info.identifier != null ? new ObjectId(info.identifier) : null
+
+                        // save and return result
+                        def rs = info.$save()
+                        rs.data = info
+
+                        // Return
+                        def returnJson = rs.toString()
+                        request.response().end(returnJson)
+                    }
+                })
+            }
+        }
     }
 
     @Override

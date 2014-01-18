@@ -1,9 +1,11 @@
 package com.ko.model
 
+import com.google.code.morphia.Key
 import com.google.code.morphia.annotations.Id
 import com.google.code.morphia.annotations.Transient
 import com.google.code.morphia.query.UpdateOperations
 import com.google.gson.Gson
+import com.mongodb.util.JSON
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.apache.bsf.util.event.adapters.java_awt_event_KeyAdapter
@@ -19,6 +21,20 @@ class BaseEntity<T> {
     @Transient
     String identifier
 
+    /**
+     * Arhive
+     */
+//    Date archiveDate;
+    boolean archive = false;
+//
+//    // Creaet
+//    Date createDate = Calendar.getInstance().getTime();
+//    String createBy;
+//
+//    // Update
+//    Date lastUpdate = Calendar.getInstance().getTime();
+//    String updateBy;
+
     @Transient
     private T _type;
 
@@ -26,6 +42,7 @@ class BaseEntity<T> {
     protected static Connector _connector = new Connector()
 
     def UpdateOperations getUpdateOps(Class cls) {
+
         return _connector.getDatastore().createUpdateOperations(cls)
     }
 
@@ -52,13 +69,29 @@ class BaseEntity<T> {
         }
     }
 
+    def static Object $findById(Class cls, ObjectId id){
+        def entry = _connector.getDatastore().get(cls, id)
+        if(entry != null){
+            entry.identifier = entry._id.toString()
+        }
+        return entry
+    }
+
     def static <T> T $findByExample(T example) {
         try {
+            Console.println("==Find By Example==")
+
             def customer = _connector.getDatastore().queryByExample(example).get()
             customer.each { BaseEntity c -> c.identifier = c._id.toString() }
+
+            Console.println("Example: "+ $toJson(example))
+            Console.println("Found: " + customer)
+
             return customer
         } catch (e) {
+            Console.println("==Error==")
             println(e.getMessage())
+
             return null
         }
     }
@@ -70,9 +103,18 @@ class BaseEntity<T> {
     }
 
     def String $toJson() {
+        /*
         def out = JsonOutput.toJson(this)
         return out
+        */
+        return $toJson(this);
     }
+
+    /*
+    def static String $toJson(Object obj){
+        def json = JSON.serialize(obj)
+        return json;
+    }*/
 
     def static String $toJson(Object obj) {
         def out = JsonOutput.toJson(obj)
@@ -80,14 +122,14 @@ class BaseEntity<T> {
     }
 
     def static Object $fromJson(String json) {
-//        json = json.replaceAll("\\\$\\\$hashKey", "xxx")
+        def obj = JSON.parse(json)
 
-        Console.println(json)
-        Console.println("==============================")
+        removeExtraProperty(obj)
 
-        HashMap rs = new JsonSlurper().parseText(json);
+        return obj;
+    }
 
-
+    def private static removeExtraProperty(HashMap rs) {
         def itor = rs.entrySet().iterator()
         while (itor.hasNext()) {
             Map.Entry<String, Object> entry = itor.next();
@@ -96,13 +138,23 @@ class BaseEntity<T> {
             Console.println("Value:" + entry.value)
             Console.println("============================")
 
-            if (entry.key.contains("\$") || entry.key.startsWith("_")){
+            if (entry.key.contains("\$") || entry.key.startsWith("_")) {
                 Console.println("Remove:" + entry.key)
                 itor.remove();
             }
         }
+    }
 
-        return rs;
+    def static Object $fromJsonSluper(String json) {
+//        json = json.replaceAll("\\\$\\\$hashKey", "xxx")
+
+        Console.println(json)
+        Console.println("==============================")
+
+        HashMap rs = new JsonSlurper().parseText(json)
+        removeExtraProperty(rs)
+
+        return rs
     }
 
     def static Object $fromJson(String json, Class cls) {

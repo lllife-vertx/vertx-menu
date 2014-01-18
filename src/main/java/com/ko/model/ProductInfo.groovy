@@ -7,6 +7,9 @@ class ProductInfo extends BaseEntity<ProductInfo> {
     String productId;
     String description;
 
+    String brand;
+    String model;
+
     double primaryPrice;
     double promotionPrice;
     double memberPrice;
@@ -16,5 +19,5 @@ class ProductInfo extends BaseEntity<ProductInfo> {
     List<String> imageIds = new ArrayList<String>();
     List<String> mediaIds = new ArrayList<String>();
     List<String> categoryIds = new ArrayList<String>();
-    List<String> branchInds = new ArrayList<String>();
+    List<String> branchIds = new ArrayList<String>();
 }
