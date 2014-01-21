@@ -40,6 +40,7 @@ class MainRouter extends RouteMatcher {
         this.get("/image/:id", image.$byId())
         this.post("/image/upload", image.$upload())
         this.get("/image/url/:id", image.$byId())
+        this.get("/image/thumbnail/:id", image.$byId())
 
         // test
         def test = new TestHandler()

@@ -4,6 +4,10 @@ import com.ko.model.ImageInfo
 import com.ko.model.ProductInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.Settings
+import net.coobird.thumbnailator.Thumbnails
+import net.coobird.thumbnailator.name.Rename
+import org.apache.log4j.LogManager
+import org.apache.log4j.Logger
 import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
@@ -14,6 +18,9 @@ import org.vertx.java.core.http.HttpServerRequest
  * Created by recovery on 1/16/14.
  */
 class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
+
+    private static Logger _logger = LogManager.getLogger(ImageHandler.class)
+
     @Override
     Handler<HttpServerRequest> $all() {
         return null
@@ -33,13 +40,25 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                     def objectId = new ObjectId(id)
                     def image = new ImageInfo(_id: objectId)
                     //def returnImage = ImageInfo.$findByExample(image)
-                    def returnImage = ImageInfo.$findById(ImageInfo.class, objectId)
+                    ImageInfo returnImage = ImageInfo.$findById(ImageInfo.class, objectId)
 
                     // return file
                     if (request.uri().contains("url")) {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
+
+                       Console.println("Return full: " + full)
+
                         request.response().sendFile(full)
+                    }
+                    else if(request.uri().contains("thumbnail")){
+                        def base = Settings.getUploadPath()
+                        def full = new File(base, returnImage.path).getPath()
+                        def thumbnail = full + "_thumbnail.jpg";
+
+                        Console.println("Return thumbnail: " + thumbnail)
+
+                        request.response().sendFile(thumbnail)
                     } else {
                         // return info
                         def jsonString = returnImage.$toJson()
@@ -128,6 +147,12 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                                 def rs = info.$save()
                                 rs.data = info;
 
+                                // create thumbnails
+                                def fullPath = currentFilePath
+                                def thumbnail = fullPath + "_thumbnail.jpg"
+                                Thumbnails.of(new File(fullPath)).size(300, 300).toFile(thumbnail);
+
+
                                 request.response().end(rs.toString())
                             }
                         })
@@ -146,7 +171,15 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
                             upload.streamToFileSystem(fullPath)
                             currentFilePath = fullPath
+
                         } catch (Exception ex) {
+                            Console.println("==========================")
+                            Console.println("Error: " + ex.getMessage())
+
+//                            _logger.error("[upload failed]")
+//                            _logger.error(ex.getMessage())
+//                            _logger.error(ex.getStackTrace())
+
                             request.response().statusCode = 500
                             request.response().end(ex.getMessage())
                         }

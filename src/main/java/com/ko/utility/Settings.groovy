@@ -25,7 +25,7 @@ class Settings {
         if(!fullPath.exists()){
             fullPath.mkdirs()
 
-            Console.printlin("Mkdir: " + fullPath.getPath());
+            Console.println("Mkdir: " + fullPath.getPath());
             Console.println("==============================");
         }
 
