@@ -1,11 +1,9 @@
 package com.ko.handler
 
 import com.ko.model.ImageInfo
-import com.ko.model.ProductInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.Settings
 import net.coobird.thumbnailator.Thumbnails
-import net.coobird.thumbnailator.name.Rename
 import org.apache.log4j.LogManager
 import org.apache.log4j.Logger
 import org.bson.types.ObjectId
@@ -18,8 +16,6 @@ import org.vertx.java.core.http.HttpServerRequest
  * Created by recovery on 1/16/14.
  */
 class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
-
-    private static Logger _logger = LogManager.getLogger(ImageHandler.class)
 
     @Override
     Handler<HttpServerRequest> $all() {
@@ -47,11 +43,10 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
 
-                       Console.println("Return full: " + full)
+                        Console.println("Return full: " + full)
 
                         request.response().sendFile(full)
-                    }
-                    else if(request.uri().contains("thumbnail")){
+                    } else if (request.uri().contains("thumbnail")) {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
                         def thumbnail = full + "_thumbnail.jpg";
@@ -115,7 +110,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
             @Override
             void handle(HttpServerRequest request) {
 
-                Console.println("Request...")
+                Console.println("ImageInfo.\$upload()")
                 Console.println("=======================")
 
                 // Expect multipart/formdata
@@ -158,7 +153,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         })
 
                         // Save file
-                        def originalFileName = upload.filename()
+                        def originalFileName = upload.filename().replaceAll(" ", "")
 
                         Console.println("Original: " + originalFileName)
                         Console.println("====================")
@@ -188,5 +183,37 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
             }
         }
+    }
+
+    @Override
+    Handler<HttpServerRequest> $remove() {
+        return new Handler<HttpServerRequest>() {
+
+            @Override
+            void handle(HttpServerRequest request) {
+
+                Console.println("ImageInfo.\$remove()")
+                HeaderUtility.allowOrigin(request)
+
+                request.bodyHandler(new Handler<Buffer>() {
+                    @Override
+                    void handle(Buffer buffer) {
+
+//                        HeaderUtility.allowOrigin(request)
+
+                        def id = request.params().get("id");
+                        def objectId = new ObjectId(id);
+
+                        Console.println("Remove reqeust: " + id)
+
+                        def example = new ImageInfo(_id: objectId)
+                        def rs = example.$remove(ImageInfo.getClass())
+                        def jsonString = rs.toString()
+
+                        request.response().end(jsonString)
+                    }
+                })
+            }
+        };
     }
 }

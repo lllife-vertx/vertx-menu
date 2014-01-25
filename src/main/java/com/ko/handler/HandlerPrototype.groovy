@@ -13,4 +13,5 @@ interface  HandlerPrototype<T> {
     Handler<HttpServerRequest> $byExample();
     Handler<HttpServerRequest> $add();
     Handler<HttpServerRequest> $upload();
+    Handler<HttpServerRequest> $remove();
 }

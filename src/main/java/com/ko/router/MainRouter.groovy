@@ -36,11 +36,17 @@ class MainRouter extends RouteMatcher {
 
         // image
         def image = new ImageHandler()
+
+        this.post("/image/delete/:id", image.$remove());
+//        this.post("/delete/id", image.$remove())
         this.post("/image", image.$add())
+
         this.get("/image/:id", image.$byId())
         this.post("/image/upload", image.$upload())
         this.get("/image/url/:id", image.$byId())
         this.get("/image/thumbnail/:id", image.$byId())
+
+        //this.delete("/image/:id", image.$remove())
 
         // test
         def test = new TestHandler()

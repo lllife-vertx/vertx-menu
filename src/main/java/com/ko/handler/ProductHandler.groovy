@@ -165,4 +165,9 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
             }
         }
     }
+
+    @Override
+    Handler<HttpServerRequest> $remove() {
+        return null
+    }
 }

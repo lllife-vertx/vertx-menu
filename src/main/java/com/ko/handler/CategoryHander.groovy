@@ -98,4 +98,9 @@ class CategoryHander implements HandlerPrototype<CategoryInfo> {
     Handler<HttpServerRequest> $upload() {
         return null
     }
+
+    @Override
+    Handler<HttpServerRequest> $remove() {
+        return null
+    }
 }

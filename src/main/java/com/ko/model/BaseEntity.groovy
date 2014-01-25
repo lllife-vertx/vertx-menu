@@ -24,16 +24,19 @@ class BaseEntity<T> {
     /**
      * Arhive
      */
-//    Date archiveDate;
+    Date _archiveDate;
     boolean archive = false;
-//
-//    // Creaet
-//    Date createDate = Calendar.getInstance().getTime();
-//    String createBy;
-//
-//    // Update
-//    Date lastUpdate = Calendar.getInstance().getTime();
-//    String updateBy;
+
+    Date _deleteDate;
+    boolean delete = false;
+
+    // Creaet
+    Date _createDate = Calendar.getInstance().getTime();
+    String createBy;
+
+    // Update
+    Date _lastUpdate = Calendar.getInstance().getTime();
+    String updateBy;
 
     @Transient
     private T _type;
@@ -46,6 +49,7 @@ class BaseEntity<T> {
         return _connector.getDatastore().createUpdateOperations(cls)
     }
 
+
     def Result $save() {
         try {
             _connector.getDatastore().save(this)
@@ -54,6 +58,20 @@ class BaseEntity<T> {
             return new Result(success: true, id: this._id.toString())
         } catch (e) {
             return new Result(success: false, message: e.getMessage())
+        }
+    }
+
+    def Result $remove(Class cls) {
+//        def query = _connector.getDatastore().createQuery(cls).where("_id").equals(this._id)
+//        def rs = _connector.getDatastore().findAndDelete(query)
+
+        def obj = this;
+        def rs = _connector.getDatastore().delete(this);
+
+        if (rs != null) {
+            return new Result(success: true, data: rs);
+        } else {
+            return new Result(success: false, data: rs)
         }
     }
 
@@ -69,9 +87,9 @@ class BaseEntity<T> {
         }
     }
 
-    def static Object $findById(Class cls, ObjectId id){
+    def static Object $findById(Class cls, ObjectId id) {
         def entry = _connector.getDatastore().get(cls, id)
-        if(entry != null){
+        if (entry != null) {
             entry.identifier = entry._id.toString()
         }
         return entry
@@ -84,7 +102,7 @@ class BaseEntity<T> {
             def customer = _connector.getDatastore().queryByExample(example).get()
             customer.each { BaseEntity c -> c.identifier = c._id.toString() }
 
-            Console.println("Example: "+ $toJson(example))
+            Console.println("Example: " + $toJson(example))
             Console.println("Found: " + customer)
 
             return customer
