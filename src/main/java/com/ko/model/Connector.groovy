@@ -2,6 +2,7 @@ package com.ko.model
 
 import com.google.code.morphia.Datastore
 import com.google.code.morphia.Morphia
+import com.ko.utility.Settings
 import com.mongodb.Mongo
 
 /**
@@ -12,10 +13,14 @@ class Connector {
     private Datastore _dr = null;
 
     Connector(){
-        def mongo = new Mongo("localhost", 27017)
-        _dr = new Morphia().createDatastore(mongo, "vertx")
-    }
 
+        def host = Settings.getDbHost()
+        def port = Settings.getDbPort()
+        def db = Settings.getDbName()
+
+        def mongo = new Mongo(host, port)
+        _dr = new Morphia().createDatastore(mongo, db)
+    }
 
     def Datastore getDatastore(){
         return _dr

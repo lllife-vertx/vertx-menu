@@ -6,7 +6,7 @@ package com.ko.model
 class CategoryInfo extends BaseEntity<CategoryInfo>{
     String title;
     String description;
-    String id;
+    String categoryId;
     String parentId;
     List<String> imageIds = new ArrayList<String>();
 }

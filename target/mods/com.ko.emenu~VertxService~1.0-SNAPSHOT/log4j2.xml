@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appenders>
+        <!--
+        <File name="A1" fileName="Logs/FileTransfer.log" append="true">
+            <PatternLayout pattern="%d %t %-5p %c{2} - %m%n"/>
+        </File>
+        -->
+
+        <RollingFile name="RollingFile" fileName="transfer-app.log"
+                     filePattern="app-%d{MM-dd-yyyy}.log.gz">
+            <PatternLayout>
+                <pattern>%d [%p] %c ##### %m%n</pattern>
+            </PatternLayout>
+            <TimeBasedTriggeringPolicy />
+        </RollingFile>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d [%p] %c ##### %m%n"/>
+        </Console>
+    </appenders>
+
+    <loggers>
+        <!--
+        <logger name="abc.def" level="debug">
+            <appender-ref ref="A1"/>
+        </logger>
+        -->
+        <root level="trace">
+            <appender-ref ref="STDOUT"/>
+            <appender-ref ref="RollingFile"/>
+        </root>
+    </loggers>
+</configuration>

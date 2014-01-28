@@ -1,7 +1,7 @@
 package com.ko
 
 import com.ko.router.MainRouter
-import com.ko.router.TestRouter
+import com.ko.utility.StaticLogger
 import org.vertx.java.platform.Verticle
 
 /**
@@ -12,14 +12,20 @@ class MainService extends Verticle{
     @Override
     def void start(){
         def log = container.logger();
-        def server = vertx.createHttpServer()
-        //def hello = new  TestRouter()
-        def hello = new MainRouter();
 
+        StaticLogger.init(log);
+
+        def server = vertx.createHttpServer()
+        def hello = new MainRouter();
 
         server.requestHandler(hello)
         server.listen(8877, "0.0.0.0")
+
+
+        log.info("== Main Service ==")
         log.info("Start 0.0.0.0 @8877")
-        log.info("Update")
+
+
+        StaticLogger.logger().info("== Static Logger Is Ok ==")
     }
 }

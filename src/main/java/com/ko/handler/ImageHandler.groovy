@@ -3,19 +3,21 @@ package com.ko.handler
 import com.ko.model.ImageInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.Settings
+import com.ko.utility.StaticLogger
 import net.coobird.thumbnailator.Thumbnails
-import org.apache.log4j.LogManager
-import org.apache.log4j.Logger
 import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.http.HttpServerFileUpload
 import org.vertx.java.core.http.HttpServerRequest
+import org.vertx.java.core.logging.Logger
 
 /**
  * Created by recovery on 1/16/14.
  */
 class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
+
+    private static Logger _logger = StaticLogger.logger()
 
     @Override
     Handler<HttpServerRequest> $all() {
@@ -32,10 +34,9 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
                 try {
                     def id = request.params().get("id")
-
                     def objectId = new ObjectId(id)
-                    def image = new ImageInfo(_id: objectId)
-                    //def returnImage = ImageInfo.$findByExample(image)
+//                    def image = new ImageInfo(_id: objectId)
+
                     ImageInfo returnImage = ImageInfo.$findById(ImageInfo.class, objectId)
 
                     // return file
@@ -43,7 +44,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
 
-                        Console.println("Return full: " + full)
+                        _logger.info("Return Full: " + full)
 
                         request.response().sendFile(full)
                     } else if (request.uri().contains("thumbnail")) {
@@ -51,7 +52,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def full = new File(base, returnImage.path).getPath()
                         def thumbnail = full + "_thumbnail.jpg";
 
-                        Console.println("Return thumbnail: " + thumbnail)
+                        _logger.info("Return Thumbnail: " + thumbnail)
 
                         request.response().sendFile(thumbnail)
                     } else {
@@ -106,12 +107,11 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
     @Override
     Handler<HttpServerRequest> $upload() {
 
+        Logger _logger = StaticLogger.logger()
+
         return new Handler<HttpServerRequest>() {
             @Override
             void handle(HttpServerRequest request) {
-
-                Console.println("ImageInfo.\$upload()")
-                Console.println("=======================")
 
                 // Expect multipart/formdata
                 request.expectMultiPart(true)
@@ -154,26 +154,19 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
 
                         // Save file
                         def originalFileName = upload.filename().replaceAll(" ", "")
-
-                        Console.println("Original: " + originalFileName)
-                        Console.println("====================")
+                        _logger.info("Original: " + originalFileName)
 
                         try {
                             def fullPath = Settings.createUploadPath(originalFileName)
-
-                            Console.println("New: " + fullPath)
-                            Console.println("====================")
+                            _logger.info("New: " + fullPath)
 
                             upload.streamToFileSystem(fullPath)
                             currentFilePath = fullPath
 
                         } catch (Exception ex) {
-                            Console.println("==========================")
-                            Console.println("Error: " + ex.getMessage())
-
-//                            _logger.error("[upload failed]")
-//                            _logger.error(ex.getMessage())
-//                            _logger.error(ex.getStackTrace())
+                            _logger.error("<Upload Failed>")
+                            _logger.error(ex.getMessage())
+                            _logger.error(ex.getStackTrace())
 
                             request.response().statusCode = 500
                             request.response().end(ex.getMessage())
@@ -192,7 +185,6 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
             @Override
             void handle(HttpServerRequest request) {
 
-                Console.println("ImageInfo.\$remove()")
                 HeaderUtility.allowOrigin(request)
 
                 request.bodyHandler(new Handler<Buffer>() {

@@ -5,56 +5,59 @@ import com.google.code.morphia.annotations.Id
 import com.google.code.morphia.annotations.Transient
 import com.google.code.morphia.query.UpdateOperations
 import com.google.gson.Gson
+import com.ko.utility.StaticLogger
 import com.mongodb.util.JSON
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.apache.bsf.util.event.adapters.java_awt_event_KeyAdapter
 import org.bson.types.ObjectId
+import org.vertx.java.core.logging.Logger
 
 /**
  * Created by recovery on 12/22/13.
  */
 class BaseEntity<T> {
+
+    // default logger from vert.x
+    @Transient
+    private  static Logger _logger = StaticLogger.logger()
+
+    // unique mongo id
     @Id
     ObjectId _id
 
+    // _id shadow as string
     @Transient
     String identifier
 
-    /**
-     * Arhive
-     */
+    // archive infomation include date and status
     Date _archiveDate;
     boolean archive = false;
 
+    // delete infomation
     Date _deleteDate;
     boolean delete = false;
 
-    // Creaet
+    // create information
     Date _createDate = Calendar.getInstance().getTime();
     String createBy;
 
-    // Update
+    // update infomation
     Date _lastUpdate = Calendar.getInstance().getTime();
     String updateBy;
 
-    @Transient
-    private T _type;
-
+    // default db connector
     @Transient
     protected static Connector _connector = new Connector()
 
     def UpdateOperations getUpdateOps(Class cls) {
-
         return _connector.getDatastore().createUpdateOperations(cls)
     }
-
 
     def Result $save() {
         try {
             _connector.getDatastore().save(this)
             this.identifier = this._id.toString()
-
             return new Result(success: true, id: this._id.toString())
         } catch (e) {
             return new Result(success: false, message: e.getMessage())
@@ -62,10 +65,6 @@ class BaseEntity<T> {
     }
 
     def Result $remove(Class cls) {
-//        def query = _connector.getDatastore().createQuery(cls).where("_id").equals(this._id)
-//        def rs = _connector.getDatastore().findAndDelete(query)
-
-        def obj = this;
         def rs = _connector.getDatastore().delete(this);
 
         if (rs != null) {
@@ -76,6 +75,8 @@ class BaseEntity<T> {
     }
 
     def static <T> List<T> $findAll(Class cls) {
+
+        _logger.trace("Find All: " + cls.name)
 
         try {
             def rs = _connector.getDatastore().createQuery(cls).asList()
@@ -88,6 +89,10 @@ class BaseEntity<T> {
     }
 
     def static Object $findById(Class cls, ObjectId id) {
+
+        _logger.info("Find By Id:" + id.toString())
+        _logger.info("Class: " + cls.name)
+
         def entry = _connector.getDatastore().get(cls, id)
         if (entry != null) {
             entry.identifier = entry._id.toString()
@@ -97,18 +102,15 @@ class BaseEntity<T> {
 
     def static <T> T $findByExample(T example) {
         try {
-            Console.println("==Find By Example==")
 
             def customer = _connector.getDatastore().queryByExample(example).get()
             customer.each { BaseEntity c -> c.identifier = c._id.toString() }
 
-            Console.println("Example: " + $toJson(example))
-            Console.println("Found: " + customer)
-
             return customer
         } catch (e) {
-            Console.println("==Error==")
-            println(e.getMessage())
+
+            _logger.error(e.getMessage())
+            _logger.error(e.stackTrace)
 
             return null
         }
@@ -121,18 +123,9 @@ class BaseEntity<T> {
     }
 
     def String $toJson() {
-        /*
-        def out = JsonOutput.toJson(this)
-        return out
-        */
         return $toJson(this);
     }
 
-    /*
-    def static String $toJson(Object obj){
-        def json = JSON.serialize(obj)
-        return json;
-    }*/
 
     def static String $toJson(Object obj) {
         def out = JsonOutput.toJson(obj)
@@ -152,9 +145,6 @@ class BaseEntity<T> {
         while (itor.hasNext()) {
             Map.Entry<String, Object> entry = itor.next();
 
-            Console.println("Key:" + entry.key)
-            Console.println("Value:" + entry.value)
-            Console.println("============================")
 
             if (entry.key.contains("\$") || entry.key.startsWith("_")) {
                 Console.println("Remove:" + entry.key)
@@ -165,9 +155,6 @@ class BaseEntity<T> {
 
     def static Object $fromJsonSluper(String json) {
 //        json = json.replaceAll("\\\$\\\$hashKey", "xxx")
-
-        Console.println(json)
-        Console.println("==============================")
 
         HashMap rs = new JsonSlurper().parseText(json)
         removeExtraProperty(rs)

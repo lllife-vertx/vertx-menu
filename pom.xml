@@ -135,6 +135,17 @@
           <version>[0.4, 0.5)</version>
       </dependency>
 
+
+
+      <!--
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+          <version>1.7.5</version>
+      </dependency>
+      -->
+
+
     <!-- Add any other dependencies that you want packaged into your module (in the lib dir) here
     as 'compile' dependencies. Here is an example
     <dependency>

@@ -1,5 +1,7 @@
 package com.ko.utility
 
+import org.vertx.java.core.logging.Logger
+
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
@@ -7,6 +9,20 @@ import java.text.SimpleDateFormat
  * Created by recovery on 1/16/14.
  */
 class Settings {
+
+    private static Logger _logger = StaticLogger.logger()
+
+    def static String getDbHost(){
+        return "localhost"
+    }
+
+    def static String getDbName(){
+        return "vertx"
+    }
+
+    def static int getDbPort(){
+        return 27017
+    }
 
     def static String getUploadPath() {
         def imagePath = "/home/recovery/sources/emenu/VertxService/upload";
@@ -25,8 +41,7 @@ class Settings {
         if(!fullPath.exists()){
             fullPath.mkdirs()
 
-            Console.println("Mkdir: " + fullPath.getPath());
-            Console.println("==============================");
+            _logger.info("Mkdirs: " + fullPath.getPath());
         }
 
         def uuid = UUID.randomUUID().toString()
