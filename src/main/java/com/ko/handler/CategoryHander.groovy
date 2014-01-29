@@ -63,7 +63,6 @@ class CategoryHander implements HandlerPrototype<CategoryInfo> {
         return new Handler<HttpServerRequest>() {
             @Override
             void handle(HttpServerRequest request) {
-                Console.println("Request ...");
 
                 request.bodyHandler(new Handler<Buffer>() {
                     @Override
@@ -72,15 +71,10 @@ class CategoryHander implements HandlerPrototype<CategoryInfo> {
                         // extract json string
                         String json = buffer.getString(0, buffer.length())
 
-
-                        Console.println(json)
-                        Console.println("=====================================")
-
                         // create object from json
                         //def info = ProductInfo.$fromJson(json, ProductInfo.getClass())
                         CategoryInfo info = ProductInfo.$fromJson(json)
                         info._id = info.identifier != null ? new ObjectId(info.identifier) : null
-
 
                         // save and return result
                         def rs = info.$save()

@@ -164,7 +164,7 @@ class BaseEntity<T> {
 
 
             if (entry.key.contains("\$") || entry.key.startsWith("_")) {
-                Console.println("Remove:" + entry.key)
+                _logger.info("Remove: " + entry.key)
                 itor.remove();
             }
         }
