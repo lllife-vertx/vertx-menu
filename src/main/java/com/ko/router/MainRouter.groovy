@@ -4,6 +4,7 @@ import com.ko.handler.CategoryHander
 import com.ko.handler.ImageHandler
 import com.ko.handler.ProductHandler
 import com.ko.handler.TestHandler
+import com.ko.handler.UserHandler
 import com.ko.model.Connector
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.HttpServerRequest
@@ -47,6 +48,10 @@ class MainRouter extends RouteMatcher {
         this.get("/image/thumbnail/:id", image.$byId())
 
         //this.delete("/image/:id", image.$remove())
+
+        // user
+        def user = new UserHandler()
+        this.post("/user/login", user.$login());
 
         // test
         def test = new TestHandler()

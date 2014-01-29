@@ -90,8 +90,8 @@ class BaseEntity<T> {
 
     def static Object $findById(Class cls, ObjectId id) {
 
-        _logger.info("Find By Id:" + id.toString())
-        _logger.info("Class: " + cls.name)
+//        _logger.info("Find By Id:" + id.toString())
+//        _logger.info("Class: " + cls.name)
 
         def entry = _connector.getDatastore().get(cls, id)
         if (entry != null) {
@@ -100,11 +100,28 @@ class BaseEntity<T> {
         return entry
     }
 
+    def static <T> T $queryBy(Class cls, HashMap<String,Object> condition){
+
+        def db = _connector.getDatastore()
+        def con = db.createQuery(cls)
+
+        condition.each { k, v ->
+            _logger.info("== Key: " + k)
+            _logger.info("== Value: " + v)
+//            con.criteria(k).equals(v)
+            con.field(k).equal(v)
+        }
+
+        con.get()
+    }
+
     def static <T> T $findByExample(T example) {
         try {
 
             def customer = _connector.getDatastore().queryByExample(example).get()
             customer.each { BaseEntity c -> c.identifier = c._id.toString() }
+
+            _logger.info("Find By Example: " + customer._id.toString())
 
             return customer
         } catch (e) {

@@ -44,7 +44,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
 
-                        _logger.info("Return Full: " + full)
+//                        _logger.info("Return Full: " + full)
 
                         request.response().sendFile(full)
                     } else if (request.uri().contains("thumbnail")) {
@@ -52,7 +52,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def full = new File(base, returnImage.path).getPath()
                         def thumbnail = full + "_thumbnail.jpg";
 
-                        _logger.info("Return Thumbnail: " + thumbnail)
+//                        _logger.info("Return Thumbnail: " + thumbnail)
 
                         request.response().sendFile(thumbnail)
                     } else {
@@ -164,7 +164,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                             currentFilePath = fullPath
 
                         } catch (Exception ex) {
-                            _logger.error("<Upload Failed>")
+                            _logger.error("== Upload Failed ==")
                             _logger.error(ex.getMessage())
                             _logger.error(ex.getStackTrace())
 
