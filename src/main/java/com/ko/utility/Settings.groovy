@@ -1,7 +1,10 @@
 package com.ko.utility
 
+import groovy.json.JsonSlurper
 import org.vertx.java.core.logging.Logger
 
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
@@ -12,21 +15,54 @@ class Settings {
 
     private static Logger _logger = StaticLogger.logger()
 
+    private static String dbHost;
+    private static String dbName;
+    private static int dbPort;
+    private static String uploadPath;
+
+    static  {
+
+       def settings = loadSetting()
+
+        dbHost = settings.dbHost
+        dbName = settings.dbName
+        dbPort = settings.dbPort
+        uploadPath = settings.uploadPath
+    }
+
+    def static Object loadSetting(){
+        Path currentPath =  Paths.get("")
+        def abs = currentPath.toAbsolutePath().toString()
+
+        _logger.info("== Working Directory ==")
+        _logger.info("Path: " + abs)
+
+
+        def file = new File(abs, "Settings.json");
+
+        def obj = new JsonSlurper().parse(new FileReader(file));
+        return obj;
+    }
+
     def static String getDbHost(){
-        return "localhost"
+//        return "localhost"
+        return dbHost
     }
 
     def static String getDbName(){
-        return "vertx"
+//        return "EMenuSystems"
+        return dbName
     }
 
     def static int getDbPort(){
-        return 27017
+//        return 27017
+        return dbPort
     }
 
     def static String getUploadPath() {
-        def imagePath = "/home/recovery/sources/emenu/VertxService/upload";
-        return imagePath
+//        def imagePath = "/home/recovery/sources/emenu/VertxService/upload";
+//        return imagePath
+        return uploadPath
     }
     def static String createUploadPath(String fileName) {
 

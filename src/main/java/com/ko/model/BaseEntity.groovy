@@ -56,6 +56,9 @@ class BaseEntity<T> {
 
     def Result $save() {
         try {
+
+            this._lastUpdate =  Calendar.getInstance().getTime();
+
             _connector.getDatastore().save(this)
             this.identifier = this._id.toString()
             return new Result(success: true, id: this._id.toString())
@@ -146,6 +149,7 @@ class BaseEntity<T> {
 
     def static String $toJson(Object obj) {
         def out = JsonOutput.toJson(obj)
+        out = JsonOutput.prettyPrint(out)
         return out
     }
 

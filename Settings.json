@@ -1,0 +1,6 @@
+{
+    "dbHost" : "localhost" ,
+    "dbName" : "EMenuSystems",
+    "dbPort" : 27017,
+    "uploadPath" : "/home/recovery/sources/emenu/VertxService/upload/Dropbox/emenu/images"
+}
