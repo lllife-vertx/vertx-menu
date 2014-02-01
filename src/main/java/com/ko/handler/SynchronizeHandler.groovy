@@ -7,6 +7,7 @@ import com.ko.model.ProductInfo
 import com.ko.model.SynchronizeInfo
 import com.ko.utility.Settings
 import com.ko.utility.StaticLogger
+import com.sun.corba.se.spi.activation._LocatorStub
 import groovy.json.JsonOutput
 import io.netty.util.concurrent.Promise
 import org.bson.types.ObjectId
@@ -24,23 +25,29 @@ class SynchronizeHandler {
 
     private Logger _logger = StaticLogger.logger()
     private Verticle _verticle = null;
+
     private def _start = "synchronize.start"
     private def _status = "synchronize.status"
+    private def _list = "synchronize.list"
+
+    private Connector _connector = new Connector()
 
     def SynchronizeHandler(Verticle verticle) {
         this._verticle = verticle
     }
 
-    def register() {
+    def $register() {
         def b1 = _verticle.vertx.eventBus()
         def b2 = _verticle.vertx.eventBus()
+        def b3 = _verticle.vertx.eventBus()
 
         b1.registerHandler(_start, this.$start())
         b2.registerHandler(_status, this.$status())
+        b3.registerHandler(_list, this.$list())
     }
 
-    def HashMap createImage(Connector connector, String id) {
-        def iq = connector.datastore.createQuery(ImageInfo.class)
+    def HashMap $createImage(String id) {
+        def iq = _connector.datastore.createQuery(ImageInfo.class)
         def img = iq.field("_id").equal(new ObjectId(id)).fetch().iterator().toList().last()
 
         def m = new HashMap()
@@ -51,7 +58,7 @@ class SynchronizeHandler {
         return m
     }
 
-    def HashMap createCategory(Connector connector, CategoryInfo d) {
+    def HashMap $createCategory(CategoryInfo d) {
         def c = new HashMap()
         c.imageIds = []
 
@@ -63,14 +70,14 @@ class SynchronizeHandler {
 
         // Append images
         d.imageIds.each { id ->
-            def img = createImage(connector, id)
+            def img = $createImage(id)
             c.imageIds.add(img)
         }
 
         return c
     }
 
-    def HashMap createProduct(Connector connector, ProductInfo d) {
+    def HashMap $createProduct(ProductInfo d) {
 
         def p = new HashMap()
         p.type = "product"
@@ -84,13 +91,31 @@ class SynchronizeHandler {
 
         // Append images
         d.imageIds.each { id ->
-            def img = createImage(connector, id)
+            def img = $createImage(id)
             p.imageIds.add(img)
         }
 
         // Assign category ids
         p.categoryIds = d.categoryIds
         return p
+    }
+
+    def Handler<Message> $list(){
+
+        def handler = new Handler<Message>() {
+            @Override
+            void handle(Message message) {
+                def rs = new HashMap()
+                rs.categories = SynchronizeInfo.$getUnSyncCategories()
+                rs.products = SynchronizeInfo.$getUnSyncProducts()
+
+                def jsonString = JsonOutput.toJson(rs)
+                jsonString = JsonOutput.prettyPrint(jsonString)
+
+                message.reply(jsonString)
+            }
+        }
+        return handler
     }
 
     // Start bus
@@ -110,53 +135,34 @@ class SynchronizeHandler {
                     _logger.info("== Receive Start Signal ==")
                     _logger.info("Message: " + message.body())
 
-                    def last = new SynchronizeInfo(_lastUpdate: new Date(0L))
-                    List<SynchronizeInfo> syncs = SynchronizeInfo.$findAll(SynchronizeInfo.class)
-
-                    if (syncs.size() != 0) {
-                        last = syncs.last()
-                    }
-
                     def bus = _verticle.vertx.eventBus()
-                    def connector = new Connector()
-                    def pq = connector.datastore.createQuery(ProductInfo.class)
-                    def cq = connector.datastore.createQuery(CategoryInfo.class)
 
                     // Export structure
                     def exportInfos = new HashMap()
                     exportInfos.product = []
                     exportInfos.category = []
 
-                    // Check product.
-                    bus.publish(_status, "Checking product...")
-                    def lastProducts = pq.field("_lastUpdate").greaterThanOrEq(last._lastUpdate).fetch().iterator().toList()
-
                     // Append products
+                    def lastProducts = SynchronizeInfo.$getUnSyncProducts()
                     lastProducts.each { d ->
-
                         bus.publish(_status, d.$toJson())
 
-                        def p = createProduct(connector, d)
+                        def p = $createProduct(d)
                         exportInfos.product.add(p)
                     }
 
-                    // Check category.
-                    bus.publish(_status, "Checking category...")
-                    def lastCategories = cq.field("_lastUpdate").greaterThanOrEq(last._lastUpdate).fetch().iterator().toList()
-
                     // Append cateogories
+                    def lastCategories = SynchronizeInfo.$getUnSyncCategories()
                     lastCategories.each { d ->
 
                         bus.publish(_status, d.$toJson())
 
-                        def c = createCategory(connector, d)
+                        def c = $createCategory(d)
                         exportInfos.category.add(c)
                     }
 
                     def json = JsonOutput.toJson(exportInfos)
                     json = JsonOutput.prettyPrint(json)
-
-                    //bus.publish(_status, json)
 
                     // Export files
                     _logger.info("Export: " + exportPath)
@@ -164,7 +170,9 @@ class SynchronizeHandler {
                     writer.write(json)
                     writer.close()
 
-                    //last.$save()
+                    def totals = lastProducts.size() + lastCategories.size()
+                    SynchronizeInfo info = new SynchronizeInfo(numberOfRecords: totals )
+                    info.$save()
                 }
             }
         }

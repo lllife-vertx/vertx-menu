@@ -22,7 +22,7 @@ class MainService extends Verticle{
         StaticLogger.init(log);
 
         // Register event bus.
-        this.registerEventBus()
+        this.$registerEventBus()
 
         // Register serice
         def server = vertx.createHttpServer()
@@ -32,7 +32,7 @@ class MainService extends Verticle{
         server.requestHandler(hello)
 
         // Create socket service.
-        this.createSockJsService(server)
+        this.$createSockJsService(server)
 
         // Start litening...
         server.listen(8877, "0.0.0.0")
@@ -51,12 +51,12 @@ class MainService extends Verticle{
         StaticLogger.logger().info("== Static Logger Is Ok ==")
     }
 
-    def void registerEventBus(){
+    def void $registerEventBus(){
         def sync = new SynchronizeHandler(this)
-        sync.register()
+        sync.$register()
     }
 
-    def void createSockJsService(HttpServer server){
+    def void $createSockJsService(HttpServer server){
         def config = new JsonObject()
         config.putValue("prefix", "/eventbus")
 
