@@ -20,6 +20,8 @@ class Settings {
     private static int dbPort;
     private static String uploadPath;
 
+    public static enum UploadType { IMAGE , VIDEO }
+
     static  {
 
        def settings = loadSetting()
@@ -64,13 +66,21 @@ class Settings {
 //        return imagePath
         return uploadPath
     }
-    def static String createUploadPath(String fileName) {
+    def static String createUploadPath(UploadType type, String fileName) {
 
         def imagePath = getUploadPath()
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd")
         Date date = new Date()
+
         def subDirectory = dateFormat.format(date)
+
+        // Create image or video path
+        if(type == UploadType.IMAGE){
+           imagePath = new File(imagePath, "images").getAbsolutePath()
+        }else {
+            imagePath = new File(imagePath, "videos").getAbsolutePath()
+        }
 
         def fullPath = new File(imagePath, subDirectory);
 

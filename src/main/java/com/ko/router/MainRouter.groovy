@@ -2,10 +2,12 @@ package com.ko.router
 
 import com.ko.handler.CategoryHander
 import com.ko.handler.ImageHandler
+import com.ko.handler.MediaHandler
 import com.ko.handler.ProductHandler
 import com.ko.handler.TestHandler
 import com.ko.handler.UserHandler
 import com.ko.model.Connector
+import com.ko.model.MediaInfo
 import org.vertx.java.core.Handler
 import org.vertx.java.core.http.HttpServerRequest
 import org.vertx.java.core.http.RouteMatcher
@@ -33,6 +35,11 @@ class MainRouter extends RouteMatcher {
         this.get("/category", category.$all())
         this.post("/category", category.$add())
         this.post("/category/query", category.$byExample())
+
+        def video = new MediaHandler()
+        this.post("/video/upload", video.$upload())
+        this.get("/video/url/:id", video.$byId())
+        this.get("/video/:id", video.$byId())
 
 
         // image

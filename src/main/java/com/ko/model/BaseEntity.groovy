@@ -1,26 +1,25 @@
 package com.ko.model
 
-import com.google.code.morphia.Key
 import com.google.code.morphia.annotations.Id
 import com.google.code.morphia.annotations.Transient
 import com.google.code.morphia.query.UpdateOperations
 import com.google.gson.Gson
 import com.ko.utility.StaticLogger
-import com.mongodb.util.JSON
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import org.apache.bsf.util.event.adapters.java_awt_event_KeyAdapter
 import org.bson.types.ObjectId
 import org.vertx.java.core.logging.Logger
+
+import java.text.SimpleDateFormat
 
 /**
  * Created by recovery on 12/22/13.
  */
-class BaseEntity<T> {
+class BaseEntity<T> implements Serializable {
 
     // default logger from vert.x
     @Transient
-    private  static Logger _logger = StaticLogger.logger()
+    private static Logger _logger = StaticLogger.logger()
 
     // unique mongo id
     @Id
@@ -31,19 +30,19 @@ class BaseEntity<T> {
     String identifier
 
     // archive infomation include date and status
-    Date _archiveDate;
+    Date archiveDate;
     boolean archive = false;
 
     // delete infomation
-    Date _deleteDate;
+    Date deleteDate;
     boolean delete = false;
 
     // create information
-    Date _createDate = Calendar.getInstance().getTime();
+    Date createDate // = Calendar.getInstance().getTime();
     String createBy;
 
     // update infomation
-    Date _lastUpdate = Calendar.getInstance().getTime();
+    Date lastUpdate // = Calendar.getInstance().getTime();
     String updateBy;
 
     // default db connector
@@ -56,8 +55,15 @@ class BaseEntity<T> {
 
     def Result $save() {
         try {
+            if (this._id == null) {
+                this.createDate = Calendar.getInstance().getTime()
+            } else {
+                // def fmt = "2014-02-03T07:56:14+0000"
+                def dateForm = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                //this.createDate =
+            }
 
-            this._lastUpdate =  Calendar.getInstance().getTime();
+            this.lastUpdate = Calendar.getInstance().getTime();
 
             _connector.getDatastore().save(this)
             this.identifier = this._id.toString()
@@ -85,6 +91,12 @@ class BaseEntity<T> {
             def rs = _connector.getDatastore().createQuery(cls).asList()
             rs.each { BaseEntity d -> d.identifier = d._id.toString() }
 
+            _logger.info("Before Filter: " + rs.size())
+
+            rs = rs.findAll { !it.delete }.iterator().toList()
+
+            _logger.info("Alfter Filter: " + rs.size())
+
             return rs
         } catch (e) {
             return new ArrayList<T>()
@@ -103,7 +115,7 @@ class BaseEntity<T> {
         return entry
     }
 
-    def static <T> T $queryBy(Class cls, HashMap<String,Object> condition){
+    def static <T> T $queryBy(Class cls, HashMap<String, Object> condition) {
 
         def db = _connector.getDatastore()
         def con = db.createQuery(cls)
@@ -148,15 +160,44 @@ class BaseEntity<T> {
 
 
     def static String $toJson(Object obj) {
+
         def out = JsonOutput.toJson(obj)
         out = JsonOutput.prettyPrint(out)
+
+        _logger.info("== Serialize ==")
+        _logger.info("Class: " + obj.class)
+
+//        def out = JSON.serialize(obj)
+
         return out
     }
 
-    def static Object $fromJson(String json) {
-        def obj = JSON.parse(json)
+    def static void pareDate(Object obj, String name) {
+        try {
+            _logger.info("Try Parse: " + name)
+            _logger.info("Value: " + obj."$name")
 
-        removeExtraProperty(obj)
+            // Parse date string int java native date
+            // 2014-02-03T08:46:22+0000
+            def dateForm = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+            obj."$name" = dateForm.parse(obj."$name")
+
+        } catch (e) {
+            _logger.error("== Parse createDate Failed==")
+            _logger.error(e)
+        }
+    }
+
+    def static Object $fromJson(String json) {
+        //def obj = JSON.parse(json)
+        //removeExtraProperty(obj)
+
+        def obj = $fromJsonSluper(json)
+
+        pareDate(obj, "deleteDate")
+        pareDate(obj, "archiveDate")
+        pareDate(obj, "createDate")
+        pareDate(obj, "lastUpdate")
 
         return obj;
     }
@@ -166,8 +207,8 @@ class BaseEntity<T> {
         while (itor.hasNext()) {
             Map.Entry<String, Object> entry = itor.next();
 
-
             if (entry.key.contains("\$") || entry.key.startsWith("_")) {
+
                 _logger.info("Remove: " + entry.key)
                 itor.remove();
             }
@@ -186,8 +227,6 @@ class BaseEntity<T> {
     def static Object $fromJson(String json, Class cls) {
         def gson = new Gson()
         def rs = gson.fromJson(json, cls)
-
-
         return rs
     }
 }

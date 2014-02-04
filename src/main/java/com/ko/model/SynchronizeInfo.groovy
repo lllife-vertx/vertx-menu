@@ -8,7 +8,7 @@ class SynchronizeInfo extends BaseEntity<SynchronizeInfo> {
 
     def static SynchronizeInfo $getLast(){
 
-        def last = new SynchronizeInfo(_lastUpdate: new Date(0L))
+        def last = new SynchronizeInfo(lastUpdate: new Date(0L))
         List<SynchronizeInfo> syncs = $findAll(SynchronizeInfo.class)
         if (syncs.size() != 0) {
             last = syncs.last()
@@ -17,19 +17,25 @@ class SynchronizeInfo extends BaseEntity<SynchronizeInfo> {
         return last
     }
 
-    def static List<CategoryInfo> $getUnSyncCategories() {
+    def static List<CategoryInfo> $getUnSyncCategories(boolean all) {
+        if(all) {
+            return $findAll(CategoryInfo.class)
+        }
         def last = $getLast()
         def cq = _connector.datastore.createQuery(CategoryInfo.class)
-        def lasts = cq.field("_lastUpdate").greaterThanOrEq(last._lastUpdate).fetch().iterator().toList()
+        def lasts = cq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).fetch().iterator().toList()
 
         lasts.each { d -> d.identifier = d._id.toString() }
         return lasts
     }
 
-    def static List<ProductInfo> $getUnSyncProducts() {
+    def static List<ProductInfo> $getUnSyncProducts(boolean  all) {
+        if(all){
+            return $findAll(ProductInfo)
+        }
         def last = $getLast()
         def pq = _connector.datastore.createQuery(ProductInfo.class)
-        def lasts = pq.field("_lastUpdate").greaterThanOrEq(last._lastUpdate).fetch().iterator().toList()
+        def lasts = pq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).fetch().iterator().toList()
 
         lasts.each { d -> d.identifier = d._id.toString() }
 

@@ -3,20 +3,20 @@ package com.ko.handler
 import com.ko.model.CategoryInfo
 import com.ko.model.Connector
 import com.ko.model.ImageInfo
+import com.ko.model.MediaInfo
 import com.ko.model.ProductInfo
 import com.ko.model.SynchronizeInfo
 import com.ko.utility.Settings
 import com.ko.utility.StaticLogger
-import com.sun.corba.se.spi.activation._LocatorStub
 import groovy.json.JsonOutput
-import io.netty.util.concurrent.Promise
+import groovy.json.JsonSlurper
 import org.bson.types.ObjectId
-import org.vertx.java.core.AsyncResult
 import org.vertx.java.core.Handler
-import org.vertx.java.core.eventbus.EventBus
 import org.vertx.java.core.eventbus.Message
 import org.vertx.java.core.logging.Logger
 import org.vertx.java.platform.Verticle
+
+import java.nio.file.attribute.FileTime
 
 /**
  * Created by recovery on 1/31/14.
@@ -58,15 +58,45 @@ class SynchronizeHandler {
         return m
     }
 
+    def HashMap $createVideo(String id){
+        def iq = _connector.datastore.createQuery(MediaInfo.class)
+        def video = iq.field("_id").equal(new ObjectId(id)).fetch().iterator().toList().last()
+
+        def v = new HashMap()
+        v.title = video.title
+        v.description = video.description
+        v.path = video.path
+
+        return v
+    }
+
     def HashMap $createCategory(CategoryInfo d) {
+        def isMain = false
+
+        if (d.parentId != null) {
+            CategoryInfo parent = CategoryInfo.$findById(CategoryInfo, new ObjectId(d.parentId))
+            if (parent != null) {
+                if (parent.parentId == null) {
+                    isMain = true
+                }
+            }
+        }
+
         def c = new HashMap()
         c.imageIds = []
 
+        c.id = d._id.toString()
         c.type = "category"
         c.categoryId = d.categoryId
         c.title = d.title
         c.description = d.description
         c.imageIds = []
+        c.isMain = isMain
+
+        c._delete = d.delete
+
+        c.lastUpdate = d.lastUpdate
+        c.parentId = d.parentId
 
         // Append images
         d.imageIds.each { id ->
@@ -80,6 +110,7 @@ class SynchronizeHandler {
     def HashMap $createProduct(ProductInfo d) {
 
         def p = new HashMap()
+        p.id = d._id.toString()
         p.type = "product"
         p.name = d.name
         p.productid = d.productId
@@ -87,7 +118,14 @@ class SynchronizeHandler {
         p.primaryPrice = d.primaryPrice
         p.promotionPrice = d.promotionPrice
         p.memberPrice = d.memberPrice
+
         p.imageIds = []
+        p.videoIds = []
+
+        p._delete = d.delete
+        p.lastUpdate = d.lastUpdate
+        p.highlight = d.highlight
+        p.promotion = d.promotion
 
         // Append images
         d.imageIds.each { id ->
@@ -95,19 +133,26 @@ class SynchronizeHandler {
             p.imageIds.add(img)
         }
 
+        d.mediaIds.each { id ->
+            def video = $createVideo(id)
+            p.videoIds.add(video)
+        }
+
         // Assign category ids
         p.categoryIds = d.categoryIds
         return p
     }
 
-    def Handler<Message> $list(){
+    def Handler<Message> $list() {
 
         def handler = new Handler<Message>() {
             @Override
             void handle(Message message) {
+                _logger.info("== Request List ==")
+
                 def rs = new HashMap()
-                rs.categories = SynchronizeInfo.$getUnSyncCategories()
-                rs.products = SynchronizeInfo.$getUnSyncProducts()
+                rs.categories = SynchronizeInfo.$getUnSyncCategories(false)
+                rs.products = SynchronizeInfo.$getUnSyncProducts(false)
 
                 def jsonString = JsonOutput.toJson(rs)
                 jsonString = JsonOutput.prettyPrint(jsonString)
@@ -126,11 +171,12 @@ class SynchronizeHandler {
             @Override
             void handle(Message message) {
 
+                // Start work under new thread
                 Thread.start {
 
-                    def syncPath = Settings.getUploadPath()
-                    def dir = new File(syncPath).getParentFile().getAbsolutePath()
-                    def exportPath = new File(dir , "products.json").getAbsolutePath()
+                    def body = message.body().toString()
+                    def obj = new JsonSlurper().parseText(body)
+                    boolean syncAll  = obj.syncAll
 
                     _logger.info("== Receive Start Signal ==")
                     _logger.info("Message: " + message.body())
@@ -143,7 +189,10 @@ class SynchronizeHandler {
                     exportInfos.category = []
 
                     // Append products
-                    def lastProducts = SynchronizeInfo.$getUnSyncProducts()
+                    def lastProducts =  SynchronizeInfo.$getUnSyncProducts(syncAll)
+
+
+                    // Publish message
                     lastProducts.each { d ->
                         bus.publish(_status, d.$toJson())
 
@@ -152,26 +201,24 @@ class SynchronizeHandler {
                     }
 
                     // Append cateogories
-                    def lastCategories = SynchronizeInfo.$getUnSyncCategories()
-                    lastCategories.each { d ->
+                    def lastCategories =   SynchronizeInfo.$getUnSyncCategories(syncAll)
 
+                    // Publish message
+                    lastCategories.each { d ->
                         bus.publish(_status, d.$toJson())
 
                         def c = $createCategory(d)
                         exportInfos.category.add(c)
                     }
 
+                    // Export result to file
                     def json = JsonOutput.toJson(exportInfos)
                     json = JsonOutput.prettyPrint(json)
+                    $toFile(json)
 
-                    // Export files
-                    _logger.info("Export: " + exportPath)
-                    FileWriter writer = new FileWriter(exportPath)
-                    writer.write(json)
-                    writer.close()
-
+                    // Save reference
                     def totals = lastProducts.size() + lastCategories.size()
-                    SynchronizeInfo info = new SynchronizeInfo(numberOfRecords: totals )
+                    SynchronizeInfo info = new SynchronizeInfo(numberOfRecords: totals)
                     info.$save()
                 }
             }
@@ -180,13 +227,33 @@ class SynchronizeHandler {
         return handler
     }
 
+    def $toFile(String json) {
+
+        // Path
+        def syncPath = Settings.getUploadPath()
+        def dir = new File(syncPath).getParentFile().getAbsolutePath()
+
+        // File name
+        def fileTime = FileTime.fromMillis(new Date().time).toString().replaceAll(":", "-")
+        def fileName = String.format("products-%s.json", fileTime)
+        def exportPath = new File(dir, fileName).getAbsolutePath()
+
+        // Export files
+        _logger.info("Export: " + exportPath)
+
+        // Start writing...
+        FileWriter writer = new FileWriter(exportPath)
+        writer.write(json)
+        writer.close()
+    }
+
     // Status bus
     Handler<Message> $status() {
         def handler = new Handler<Message>() {
             @Override
             void handle(Message message) {
                 def body = message.body()
-                _logger.info("Status: " + body)
+//                _logger.info("Status: " + body)
             }
         }
 

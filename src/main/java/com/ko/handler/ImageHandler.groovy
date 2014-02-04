@@ -35,7 +35,6 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                 try {
                     def id = request.params().get("id")
                     def objectId = new ObjectId(id)
-//                    def image = new ImageInfo(_id: objectId)
 
                     ImageInfo returnImage = ImageInfo.$findById(ImageInfo.class, objectId)
 
@@ -44,15 +43,11 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
 
-//                        _logger.info("Return Full: " + full)
-
                         request.response().sendFile(full)
                     } else if (request.uri().contains("thumbnail")) {
                         def base = Settings.getUploadPath()
                         def full = new File(base, returnImage.path).getPath()
                         def thumbnail = full + "_thumbnail.jpg";
-
-//                        _logger.info("Return Thumbnail: " + thumbnail)
 
                         request.response().sendFile(thumbnail)
                     } else {
@@ -157,7 +152,7 @@ class ImageHandler implements HandlerPrototype<com.ko.handler.ImageHandler> {
                         _logger.info("Original: " + originalFileName)
 
                         try {
-                            def fullPath = Settings.createUploadPath(originalFileName)
+                            def fullPath = Settings.createUploadPath(Settings.UploadType.IMAGE, originalFileName)
                             _logger.info("New: " + fullPath)
 
                             upload.streamToFileSystem(fullPath)

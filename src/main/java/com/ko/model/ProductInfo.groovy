@@ -10,6 +10,9 @@ class ProductInfo extends BaseEntity<ProductInfo> {
     String brand;
     String model;
 
+    boolean highlight;
+    boolean promotion;
+
     double primaryPrice;
     double promotionPrice;
     double memberPrice;

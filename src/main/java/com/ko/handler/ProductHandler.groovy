@@ -5,12 +5,14 @@ import com.ko.model.ImageInfo
 import com.ko.model.ProductInfo
 import com.ko.model.Result
 import com.ko.utility.HeaderUtility
+import com.ko.utility.StaticLogger
 import groovy.json.JsonOutput
 import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.http.HttpServerFileUpload
 import org.vertx.java.core.http.HttpServerRequest
+import org.vertx.java.core.logging.Logger
 
 import java.lang.invoke.ConstantCallSite
 
@@ -18,6 +20,9 @@ import java.lang.invoke.ConstantCallSite
  * Created by recovery on 12/29/13.
  */
 class ProductHandler implements HandlerPrototype<ProductInfo> {
+
+    private static Logger _logger = StaticLogger.logger()
+
     @Override
     Handler<HttpServerRequest> $all() {
         return new Handler<HttpServerRequest>() {
@@ -31,6 +36,11 @@ class ProductHandler implements HandlerPrototype<ProductInfo> {
                     def jsonString = BaseEntity.$toJson(rs)
                     request.response().end(jsonString)
                 } catch (e) {
+
+                    _logger.error("== Get Product Failed ==");
+                    _logger.error(e.getMessage())
+                    _logger.error(e)
+
                     def rs = new Result(message: e.getMessage(), success: false)
                     def json = BaseEntity.$toJson(rs)
 
