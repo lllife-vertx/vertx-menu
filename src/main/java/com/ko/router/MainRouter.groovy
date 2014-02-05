@@ -36,15 +36,15 @@ class MainRouter extends RouteMatcher {
         this.post("/category", category.$add())
         this.post("/category/query", category.$byExample())
 
+
+        // video
         def video = new MediaHandler()
         this.post("/video/upload", video.$upload())
         this.get("/video/url/:id", video.$byId())
         this.get("/video/:id", video.$byId())
 
-
         // image
         def image = new ImageHandler()
-
         this.post("/image/delete/:id", image.$remove());
 //        this.post("/delete/id", image.$remove())
         this.post("/image", image.$add())

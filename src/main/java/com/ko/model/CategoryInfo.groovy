@@ -9,4 +9,5 @@ class CategoryInfo extends BaseEntity<CategoryInfo>{
     String categoryId;
     String parentId;
     List<String> imageIds = new ArrayList<String>();
+    List<String> mediaIds = new ArrayList<String>();
 }
