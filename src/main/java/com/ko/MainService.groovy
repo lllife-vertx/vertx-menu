@@ -3,7 +3,6 @@ package com.ko
 import com.ko.handler.SynchronizeHandler
 import com.ko.router.MainRouter
 import com.ko.utility.StaticLogger
-import org.vertx.java.core.Handler
 import org.vertx.java.core.http.HttpServer
 import org.vertx.java.core.json.JsonArray
 import org.vertx.java.platform.Verticle
@@ -27,7 +26,6 @@ class MainService extends Verticle{
         // Register serice
         def server = vertx.createHttpServer()
 
-
         def hello = new MainRouter();
         server.requestHandler(hello)
 
@@ -39,13 +37,7 @@ class MainService extends Verticle{
 
         // Init message...
         log.info("== Main Service ==")
-        log.info("Start 0.0.0.0 @8877")
-
-        def b1 = this.vertx.eventBus()
-        def b2 = this.vertx.eventBus()
-
-        log.info("== B1 equal B2 ==")
-        log.info("Result: " + b1 == b2)
+        log.info("== Start 0.0.0.0 @8877")
 
         // Check global log
         StaticLogger.logger().info("== Static Logger Is Ok ==")
@@ -66,9 +58,7 @@ class MainService extends Verticle{
         inc.add(new JsonObject())
         out.add(new JsonObject())
 
-
         def sockServer = vertx.createSockJSServer(server)
         sockServer.bridge(config, inc, out )
-
     }
 }

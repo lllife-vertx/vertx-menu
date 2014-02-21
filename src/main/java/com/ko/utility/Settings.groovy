@@ -91,9 +91,22 @@ class Settings {
         }
 
         def uuid = UUID.randomUUID().toString()
-        def newFileName = uuid + "-" + fileName;
+        //def newFileName = uuid + "-" + fileName;
+        def newFileName = uuid + "." + getFileExtension(fileName)
 
         def absoluteName = new File(fullPath, newFileName.toLowerCase()).getPath()
         return absoluteName;
+    }
+
+    def static String getFileExtension(String file){
+
+        def extension = ""
+        def i = file.lastIndexOf('.')
+
+        if(i > 1){
+            extension = file.substring(i+1)
+        }
+
+        return extension
     }
 }

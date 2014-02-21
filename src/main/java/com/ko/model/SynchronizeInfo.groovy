@@ -23,7 +23,7 @@ class SynchronizeInfo extends BaseEntity<SynchronizeInfo> {
         }
         def last = $getLast()
         def cq = _connector.datastore.createQuery(CategoryInfo.class)
-        def lasts = cq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).fetch().iterator().toList()
+        def lasts = cq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).field("delete").equal(false).fetch().iterator().toList()
 
         lasts.each { d -> d.identifier = d._id.toString() }
         return lasts
@@ -35,8 +35,7 @@ class SynchronizeInfo extends BaseEntity<SynchronizeInfo> {
         }
         def last = $getLast()
         def pq = _connector.datastore.createQuery(ProductInfo.class)
-        def lasts = pq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).fetch().iterator().toList()
-
+        def lasts = pq.field("lastUpdate").greaterThanOrEq(last.lastUpdate).field("delete").equal(false).fetch().iterator().toList()
         lasts.each { d -> d.identifier = d._id.toString() }
 
         return lasts

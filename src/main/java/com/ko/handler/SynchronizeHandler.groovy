@@ -207,6 +207,9 @@ class SynchronizeHandler {
     }
 
     def HashMap $createImage(String id) {
+
+        _logger.info("Create Image: " + id)
+
         def iq = _connector.datastore.createQuery(ImageInfo.class)
         def img = iq.field("_id").equal(new ObjectId(id)).fetch().iterator().toList().last()
 
@@ -390,7 +393,8 @@ class SynchronizeHandler {
 
         // Path
         def syncPath = Settings.getUploadPath()
-        def dir = new File(syncPath).getParentFile().getAbsolutePath()
+        //def dir = new File(syncPath).getParentFile().getAbsolutePath()
+        def dir = new File(syncPath).getAbsoluteFile()
 
         // File name
         def fileTime = FileTime.fromMillis(new Date().time).toString().replaceAll(":", "-")

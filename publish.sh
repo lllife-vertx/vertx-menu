@@ -1,6 +1,8 @@
 path=~/projects/EMenuSystems/dev
 target=~/projects/EMenuSystems/production
 
+mvn install
+
 echo "remove $target..."
 rm -rf "$target"
 
