@@ -5,4 +5,5 @@ package com.ko.model
  */
 class DeviceInfo extends BaseEntity<DeviceInfo> {
     String deviceId;
+    String serialNumber;
 }

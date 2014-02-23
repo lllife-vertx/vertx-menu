@@ -40,7 +40,7 @@ class MainService extends Verticle{
         log.info("== Start 0.0.0.0 @8877")
 
         // Check global log
-        StaticLogger.logger().info("== Static Logger Is Ok ==")
+        // StaticLogger.logger().info("== Static Logger Is Ok ==")
     }
 
     def void $registerEventBus(){

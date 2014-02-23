@@ -41,22 +41,25 @@ class BranchHandler implements HandlerPrototype<BranchHandler> {
     @Override
     Handler<HttpServerRequest> $add() {
         return new Handler<HttpServerRequest>() {
+
             @Override
             void handle(HttpServerRequest request) {
+
                 HeaderUtility.allowOrigin(request);
 
                 request.bodyHandler(new Handler<Buffer>(){
                     @Override
                     void handle(Buffer buffer) {
                         def jsonString = buffer.getString(0, buffer.length())
-                        BranchInfo info = BaseEntity.$fromJson(jsonString, BranchInfo);
+                        BranchInfo info = BaseEntity.$fromJson(jsonString);
 
                         Result rs = info.$save()
+                        rs.data = info
+
                         def json = BaseEntity.$toJson(rs)
                         request.response().end(json)
                     }
                 })
-
             }
         }
     }

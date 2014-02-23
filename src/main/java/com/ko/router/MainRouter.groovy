@@ -2,6 +2,7 @@ package com.ko.router
 
 import com.ko.handler.BranchHandler
 import com.ko.handler.CategoryHander
+import com.ko.handler.DeviceHandler
 import com.ko.handler.ImageHandler
 import com.ko.handler.MediaHandler
 import com.ko.handler.ProductHandler
@@ -70,6 +71,12 @@ class MainRouter extends RouteMatcher {
         this.post("/branch", branch.$add())
     }
 
+    def registerDevice(){
+        def device = new DeviceHandler()
+        this.get("/device", device.$all());
+        this.post("/device", device.$add())
+    }
+
     MainRouter() {
 
         super();
@@ -79,6 +86,7 @@ class MainRouter extends RouteMatcher {
         registerImage()
         registerUser()
         registerBranch()
+        registerDevice()
 
         this.noMatch(new Handler<HttpServerRequest>() {
             @Override

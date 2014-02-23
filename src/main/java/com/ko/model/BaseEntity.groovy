@@ -199,6 +199,10 @@ class BaseEntity<T> implements Serializable {
         pareDate(obj, "createDate")
         pareDate(obj, "lastUpdate")
 
+        try {
+            obj._id = new ObjectId(obj.identifier)
+        } catch(e) {}
+
         return obj;
     }
 
@@ -224,9 +228,9 @@ class BaseEntity<T> implements Serializable {
         return rs
     }
 
-    def static Object $fromJson(String json, Class cls) {
-        def gson = new Gson()
-        def rs = gson.fromJson(json, cls)
-        return rs
-    }
+//    def static Object $fromJson(String json, Class cls) {
+//        def gson = new Gson()
+//        def rs = gson.fromJson(json, cls)
+//        return rs
+//    }
 }

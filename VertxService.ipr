@@ -10,7 +10,6 @@
     <wildcardResourcePatterns>
       <entry name="!?*.java" />
       <entry name="!?*.groovy" />
-      <entry name="!?*.scala" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
