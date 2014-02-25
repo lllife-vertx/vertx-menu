@@ -46,7 +46,7 @@ class SynchronizeHandler {
     private def _cleanList = "clean.list"
 
     // default database connector
-    private Connector _connector = new Connector()
+    private Connector _connector = Connector.getInstance()
 
     def SynchronizeHandler(Verticle verticle) {
         this._verticle = verticle

@@ -15,10 +15,14 @@ class Settings {
 
     private static Logger _logger = StaticLogger.logger()
 
-    private static String dbHost;
-    private static String dbName;
-    private static int dbPort;
-    private static String uploadPath;
+    private static String _dbHost
+    private static String _dbName
+    private static int _dbPort
+    private static String _uploadPath
+
+    private static String _touchHost
+    private static String _touchUri
+    private static int _touchPort
 
     public static enum UploadType { IMAGE , VIDEO }
 
@@ -26,10 +30,14 @@ class Settings {
 
        def settings = loadSetting()
 
-        dbHost = settings.dbHost
-        dbName = settings.dbName
-        dbPort = settings.dbPort
-        uploadPath = settings.uploadPath
+        _dbHost = settings.dbHost
+        _dbName = settings.dbName
+        _dbPort = settings.dbPort
+        _uploadPath = settings.uploadPath
+
+        _touchHost = settings.touchHost
+        _touchPort = settings.touchPort
+        _touchUri = settings.touchUri
     }
 
     def static Object loadSetting(){
@@ -48,23 +56,35 @@ class Settings {
 
     def static String getDbHost(){
 //        return "localhost"
-        return dbHost
+        return _dbHost
     }
 
     def static String getDbName(){
 //        return "EMenuSystems"
-        return dbName
+        return _dbName
     }
 
     def static int getDbPort(){
 //        return 27017
-        return dbPort
+        return _dbPort
+    }
+
+    def static String getTouchHost(){
+        return _touchHost
+    }
+
+    def static String getTouchUri(){
+        return _touchUri
+    }
+
+    def static int getTouchPort(){
+        return _touchPort
     }
 
     def static String getUploadPath() {
 //        def imagePath = "/home/recovery/sources/emenu/VertxService/upload";
 //        return imagePath
-        return uploadPath
+        return _uploadPath
     }
     def static String createUploadPath(UploadType type, String fileName) {
 

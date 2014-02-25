@@ -12,7 +12,7 @@ class Connector {
 
     private Datastore _dr = null;
 
-    Connector(){
+    private Connector(){
 
         def host = Settings.getDbHost()
         def port = Settings.getDbPort()
@@ -24,5 +24,9 @@ class Connector {
 
     def Datastore getDatastore(){
         return _dr
+    }
+
+    public static Connector getInstance(){
+        return new Connector()
     }
 }

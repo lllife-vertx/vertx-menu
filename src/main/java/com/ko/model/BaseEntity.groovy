@@ -47,7 +47,7 @@ class BaseEntity<T> implements Serializable {
 
     // default db connector
     @Transient
-    protected static Connector _connector = new Connector()
+    protected static Connector _connector = Connector.getInstance()
 
     def UpdateOperations getUpdateOps(Class cls) {
         return _connector.getDatastore().createUpdateOperations(cls)
@@ -66,6 +66,7 @@ class BaseEntity<T> implements Serializable {
             this.lastUpdate = Calendar.getInstance().getTime();
 
             _connector.getDatastore().save(this)
+
             this.identifier = this._id.toString()
             return new Result(success: true, id: this._id.toString())
         } catch (e) {
@@ -158,7 +159,6 @@ class BaseEntity<T> implements Serializable {
         return $toJson(this);
     }
 
-
     def static String $toJson(Object obj) {
 
         def out = JsonOutput.toJson(obj)
@@ -174,17 +174,22 @@ class BaseEntity<T> implements Serializable {
 
     def static void pareDate(Object obj, String name) {
         try {
-            _logger.info("Try Parse: " + name)
-            _logger.info("Value: " + obj."$name")
-
             // Parse date string int java native date
-            // 2014-02-03T08:46:22+0000
+            // 2014-02-03T08:46:22+0000 -- from java
+            // 2014-02-21T08:42:52.925Z -- from mongojs
             def dateForm = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
             obj."$name" = dateForm.parse(obj."$name")
 
         } catch (e) {
-            _logger.error("== Parse createDate Failed==")
-            _logger.error(e)
+            try {
+                //_logger.error("<< Parse Step Two >>")
+                def fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                obj."$name" = fmt.parse(obj."$name")
+
+            }catch(ex){
+                _logger.error("== Parse <<$name>> Failed==")
+                //_logger.error(e)
+            }
         }
     }
 
@@ -198,6 +203,9 @@ class BaseEntity<T> implements Serializable {
         pareDate(obj, "archiveDate")
         pareDate(obj, "createDate")
         pareDate(obj, "lastUpdate")
+
+        pareDate(obj, "touchDate")
+        pareDate(obj, "collectDate")
 
         try {
             obj._id = new ObjectId(obj.identifier)

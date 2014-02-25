@@ -6,9 +6,12 @@ import com.ko.handler.DeviceHandler
 import com.ko.handler.ImageHandler
 import com.ko.handler.MediaHandler
 import com.ko.handler.ProductHandler
+import com.ko.handler.ReportHandler
 import com.ko.handler.TestHandler
+import com.ko.handler.TouchHandler
 import com.ko.handler.UserHandler
 import org.vertx.java.core.Handler
+import org.vertx.java.core.Vertx
 import org.vertx.java.core.http.HttpServerRequest
 import org.vertx.java.core.http.RouteMatcher
 
@@ -16,6 +19,8 @@ import org.vertx.java.core.http.RouteMatcher
  * Created by recovery on 12/29/13.
  */
 class MainRouter extends RouteMatcher {
+
+    private Vertx _vertx = null
 
     def registerProduct() {
         def product = new ProductHandler()
@@ -73,20 +78,37 @@ class MainRouter extends RouteMatcher {
 
     def registerDevice(){
         def device = new DeviceHandler()
-        this.get("/device", device.$all());
+        this.get("/device", device.$all())
         this.post("/device", device.$add())
     }
 
-    MainRouter() {
+    def registerTouch(){
+        def touch = new TouchHandler()
+        this.get("/touch", touch.$all())
+        this.post("/touch", touch.$add())
+        this.get("/touch/sync", touch.$sync(_vertx))
+    }
+
+    def registerReport(){
+        def report = new ReportHandler()
+        this.post("/report/compare/coarse", report.$queryReport(ReportHandler.ReportType.CoarseCompare));
+    }
+
+    private MainRouter(Vertx vertx) {
 
         super();
-        registerProduct()
-        registerCategory()
-        registerVideo()
-        registerImage()
-        registerUser()
-        registerBranch()
-        registerDevice()
+        _vertx = vertx
+
+        this.registerProduct()
+        this.registerCategory()
+        this.registerVideo()
+        this.registerImage()
+        this.registerUser()
+        this.registerBranch()
+        this.registerDevice()
+        this.registerTouch()
+
+        this.registerReport()
 
         this.noMatch(new Handler<HttpServerRequest>() {
             @Override
@@ -95,5 +117,13 @@ class MainRouter extends RouteMatcher {
                 request.response().end()
             }
         })
+    }
+
+    public Vertx GetVertx() {
+        return _vertx
+    }
+
+    public static MainRouter getInstance(Vertx vertx){
+        return new MainRouter(vertx)
     }
 }

@@ -26,7 +26,7 @@ class MainService extends Verticle{
         // Register serice
         def server = vertx.createHttpServer()
 
-        def hello = new MainRouter();
+        def hello = MainRouter.getInstance(this.vertx)
         server.requestHandler(hello)
 
         // Create socket service.
