@@ -5,6 +5,7 @@ import com.ko.model.Connector
 import com.ko.model.Result
 import com.ko.model.TouchInfo
 import com.ko.utility.HeaderUtility
+import com.ko.utility.HttpUtility
 import com.ko.utility.Settings
 import com.ko.utility.StaticLogger
 import groovy.json.JsonOutput
@@ -24,7 +25,6 @@ import java.text.SimpleDateFormat
  */
 class TouchHandler implements HandlerPrototype {
 
-    private Connector _connector = Connector.getInstance()
 
     @Override
     Handler<HttpServerRequest> $all() {
@@ -75,17 +75,7 @@ class TouchHandler implements HandlerPrototype {
         }
     }
 
-    private void addToken(TouchInfo info){
-        Calendar c = Calendar.getInstance()
-        c.setTime(info.touchDate)
 
-        info.year = c.get(Calendar.YEAR)
-        info.month = c.get(Calendar.MONTH)
-        info.date = c.get(Calendar.DAY_OF_MONTH)
-        info.hour = c.get(Calendar.HOUR_OF_DAY)
-        info.minute = c.get(Calendar.MINUTE)
-        info.second = c.get(Calendar.MINUTE)
-    }
 
     @Override
     Handler<HttpServerRequest> $upload() {
@@ -108,77 +98,37 @@ class TouchHandler implements HandlerPrototype {
                 // Allow access origin
                 HeaderUtility.allowOrigin(request)
 
-                // Connect touch service
-                def touchUri = Settings.getTouchUri()
-                def touchPort = Settings.getTouchPort()
-                def touchHost = Settings.getTouchHost()
+                def util = new HttpUtility(HttpUtility.Endpoint.Touchs, vertx)
+                def client = util.createClient()
+                def query = util.getQueryUrl()
 
-                def client = vertx.createHttpClient()
-                client.setPort(touchPort)
-                client.setHost(touchHost)
-                client.setKeepAlive(false)
-
-                def post = client.post("/$touchUri/query", new Handler<HttpClientResponse>() {
+                def post = client.post(query, new Handler<HttpClientResponse>() {
 
                     @Override
                     void handle(HttpClientResponse httpClientResponse) {
 
-                        httpClientResponse.bodyHandler(new Handler<Buffer>() {
-                            @Override
-                            void handle(Buffer buffer) {
-                                def body = buffer.getString(0, buffer.length())
-
-                                _logger.info("<<Response Body>>")
-                                _logger.info(body.length());
-
-                            }
-                        })
-
                         httpClientResponse.dataHandler(new Handler<Buffer>(){
                             @Override
+
                             void handle(Buffer buffer) {
                                 def data = buffer.getString(0, buffer.length())
 
                                 _logger.info("<<Reponse Data>>")
+                                _logger.info(data)
                                 _logger.info(data.length())
 
-                                List<HashMap> touchs = new JsonSlurper().parseText(data)
-                                touchs.each {
-                                    it.remove("_id")
-                                    Console.println(it)
 
-                                    def touchString = JsonOutput.toJson(it)
+                                def touchs = util.processTouchObject(data);
 
-                                    TouchInfo touch = BaseEntity.$fromJson(touchString)
-                                    addToken(touch)
-
-                                    touch.$save()
-                                }
-
+                                // return all processed info... to caller
                                 def infos = BaseEntity.$toJson(touchs)
-
-                                def returnString = BaseEntity.$toJson(infos)
-                                request.response().end(returnString)
+                                request.response().end(infos)
                             }
                         });
                     }
                 })
 
-                // Get lastest touch record
-                def ds = _connector.getDatastore()
-                def touchInfo = ds.find(TouchInfo).order("-createDate").get()
-                def lastTouchDate = new Date(10,1,1)
-
-                // Use persist date
-                if (touchInfo != null)  lastTouchDate = touchInfo.touchDate
-
-                // Base entity
-                def format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-                def dateString = format.format(lastTouchDate)
-                def requestObject = new HashMap()
-                requestObject.touchDate = dateString
-
-                def requestJson = BaseEntity.$toJson(requestObject)
+                def requestJson = util.createTouchRequestString()
 
                 // Send request
                 _logger.info("<< Request Touch Service >>")

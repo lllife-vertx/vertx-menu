@@ -207,6 +207,9 @@ class BaseEntity<T> implements Serializable {
         pareDate(obj, "touchDate")
         pareDate(obj, "collectDate")
 
+        pareDate(obj, "enterDate")
+        pareDate(obj, "leaveDate")
+
         try {
             obj._id = new ObjectId(obj.identifier)
         } catch(e) {}

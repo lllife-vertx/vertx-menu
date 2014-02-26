@@ -19,3 +19,22 @@ class TouchInfo extends BaseEntity<TouchInfo> {
     int minute;
     int second;
 }
+
+
+class PIRInfo extends BaseEntity<PIRInfo> {
+
+    Date collectDate;
+
+    Date enterDate;
+    Date leaveDate;
+
+    String deviceId;
+
+    int year;
+    int date;
+    int month;
+    int hour;
+    int minute;
+    int second;
+}
+

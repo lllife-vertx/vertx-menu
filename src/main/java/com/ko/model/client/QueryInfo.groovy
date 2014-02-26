@@ -25,12 +25,11 @@ public class QueryInfo {
     // Daily, Monthly, Yearly
     String queryType = "Daily"
 
-    String categoryAId;
-    String categoryBId;
-    String categoryCId;
-    String productId;
-
-    String branchId;
+    String categoryA;
+    String categoryB;
+    String categoryC;
+    String product;
+    String branch;
 
     public static  QueryInfo fromJson(String json){
         QueryInfo info = BaseEntity.$fromJson(json)

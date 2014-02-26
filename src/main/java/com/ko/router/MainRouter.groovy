@@ -5,6 +5,7 @@ import com.ko.handler.CategoryHander
 import com.ko.handler.DeviceHandler
 import com.ko.handler.ImageHandler
 import com.ko.handler.MediaHandler
+import com.ko.handler.PIRHandler
 import com.ko.handler.ProductHandler
 import com.ko.handler.ReportHandler
 import com.ko.handler.TestHandler
@@ -94,9 +95,15 @@ class MainRouter extends RouteMatcher {
         this.post("/report/compare/coarse", report.$queryReport(ReportHandler.ReportType.CoarseCompare));
     }
 
+    def registerPIR(){
+        def pir = new PIRHandler()
+        this.get("/pir/sync", pir.$sync(_vertx))
+    }
+
     private MainRouter(Vertx vertx) {
 
         super();
+
         _vertx = vertx
 
         this.registerProduct()
@@ -107,6 +114,7 @@ class MainRouter extends RouteMatcher {
         this.registerBranch()
         this.registerDevice()
         this.registerTouch()
+        this.registerPIR();
 
         this.registerReport()
 
