@@ -12,6 +12,8 @@ class TouchInfo extends BaseEntity<TouchInfo> {
     String objectId;
     String deviceId;
 
+    String collectId;
+
     int year;
     int date;
     int month;
@@ -29,6 +31,8 @@ class PIRInfo extends BaseEntity<PIRInfo> {
     Date leaveDate;
 
     String deviceId;
+
+    String collectId;
 
     int year;
     int date;

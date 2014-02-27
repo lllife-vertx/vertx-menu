@@ -71,10 +71,14 @@ class HttpUtility {
 
         pirs.each {
 
+            def collectId = it._id.toString()
+
+
             it.remove("_id")
 
             def pirString = JsonOutput.toJson(it)
             PIRInfo info = BaseEntity.$fromJson(pirString)
+            info.collectId = collectId
 
             addToken(info, info.enterDate)
 
@@ -86,8 +90,14 @@ class HttpUtility {
 
     public Object processTouchObject(String data) {
 
+        def logger = StaticLogger.logger()
+        logger.info("data")
+
         List<HashMap> touchs = new JsonSlurper().parseText(data)
         touchs.each {
+
+
+            def  collectId = it._id.toString()
 
             // remove _id from remote
             it.remove("_id")
@@ -97,6 +107,7 @@ class HttpUtility {
 
             // reconstuct object from json info
             TouchInfo touch = BaseEntity.$fromJson(touchString)
+            touch.collectId = collectId
 
             // in date token
             addToken(touch, touch.touchDate)
@@ -108,38 +119,61 @@ class HttpUtility {
     }
 
     public String createPIRRequestString(){
+
+        // Find last record
         def connector = Connector.getInstance()
         def ds = connector.getDatastore()
-        def pirInfo = ds.find(PIRInfo).order("-createDate").get()
+        def pirInfo = ds.find(PIRInfo).order("-_id").get()
 
+        // Create request instance
+        def request = new RequestObject()
+        request.id = ""
+        request.collectDate = ""
+
+        // Determine condition
         def lastEnter = new Date(20,1,1)
-        if(pirInfo != null) lastEnter = pirInfo.enterDate
+        if(pirInfo != null) {
+            lastEnter = pirInfo.collectDate
+            request.id = pirInfo.collectId
+        }
+
+        // Create request string
         def dateString = createRequestDate(lastEnter)
-
-        def request = new HashMap()
-        request.enterDate = dateString;
-
+        request.collectDate = dateString;
         def requestString = BaseEntity.$toJson(request)
         return requestString
     }
 
     public String createTouchRequestString() {
 
+        // Find lass record
         def connector = Connector.getInstance()
-
         def ds = connector.getDatastore()
-        def touchInfo = ds.find(TouchInfo).order("-createDate").get()
+        def touchInfo = ds.find(TouchInfo).order("-_id").get()
 
+        // Default date...
         def lastTouchDate = new Date(20, 1, 1)
 
-        // Use persist date
-        if (touchInfo != null) lastTouchDate = touchInfo.touchDate
-        def dateString = createRequestDate(lastTouchDate)
+        // Request object...
+        def requestObject = new RequestObject()
+        requestObject.id = ""
 
-        def requestObject = new HashMap()
-        requestObject.touchDate = dateString
+        // Use persist date
+        if (touchInfo != null) {
+            lastTouchDate = touchInfo.collectDate
+            requestObject.id = touchInfo.collectId
+        }
+
+        // Create request string
+        def dateString = createRequestDate(lastTouchDate)
+        requestObject.collectDate = dateString
 
         def requestString = BaseEntity.$toJson(requestObject)
         return requestString;
     }
+}
+
+class RequestObject {
+    String collectDate;
+    String id;
 }
