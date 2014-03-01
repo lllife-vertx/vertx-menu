@@ -92,7 +92,8 @@ class MainRouter extends RouteMatcher {
 
     def registerReport(){
         def report = new ReportHandler()
-        this.post("/report/compare/coarse", report.$queryReport(ReportHandler.ReportType.CoarseCompare));
+        this.post("/report/compare/chart", report.$queryReport());
+        this.post("/report/compare/summary", report.$querySummary())
     }
 
     def registerPIR(){
@@ -101,11 +102,9 @@ class MainRouter extends RouteMatcher {
     }
 
     private MainRouter(Vertx vertx) {
-
         super();
 
         _vertx = vertx
-
         this.registerProduct()
         this.registerCategory()
         this.registerVideo()

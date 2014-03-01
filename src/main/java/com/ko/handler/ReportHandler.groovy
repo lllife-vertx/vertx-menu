@@ -12,20 +12,16 @@ import com.ko.model.TouchInfo
 import com.ko.model.client.QueryInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.StaticLogger
-import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.http.HttpServerRequest
+
 import java.text.SimpleDateFormat
 
 /**
  * Created by recovery on 2/25/14.
  */
 public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHandler> {
-
-    public enum ReportType {
-        CoarseCompare, GrainedComopare
-    }
 
     @Override
     Handler<HttpServerRequest> $all() {
@@ -42,7 +38,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         return null;
     }
 
-    Handler<HttpServerRequest> $queryReport(ReportType type) {
+    Handler<HttpServerRequest> $queryReport() {
 
         return new Handler<HttpServerRequest>() {
             @Override
@@ -55,15 +51,80 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                     void handle(Buffer buffer) {
                         def body = buffer.getString(0, buffer.length());
 
-                        QueryInfo info = QueryInfo.fromJson(body);
-                        def result = coarseCompareReport(info)
-                        def returnJson = BaseEntity.$toJson(result)
+                        QueryInfo info = QueryInfo.$fromJson(body);
+                        def result = queryReport(info);
 
+                        // Omit touch infos && pir infos
+                        // Because not need in chart...
+                        def value = new HashMap()
+                        value.totalTouchs = result.touchInfos.collect { it.value.size() }
+                        value.totalPirs = result.pirInfos.collect { it.value.size() }
+                        value.columnNames = result.columnNames
+
+                        def returnJson = BaseEntity.$toJson(value)
                         request.response().end(returnJson);
                     }
                 });
             }
         };
+    }
+
+    Handler<HttpServerRequest> $querySummary(){
+        return new Handler<HttpServerRequest>() {
+
+            @Override
+            void handle(HttpServerRequest request) {
+                HeaderUtility.allowOrigin(request);
+
+                request.bodyHandler(new Handler<Buffer>() {
+                    @Override
+                    void handle(Buffer buffer) {
+
+                        // Read query info
+                        def body = buffer.getString(0, buffer.length());
+                        QueryInfo query = QueryInfo.$fromJson(body);
+
+                        // Start query
+                        def report = queryReport(query);
+
+                        // Filter for device
+                        List<DeviceInfo> devices = DeviceInfo.$findAll(DeviceInfo)
+                        List<BranchInfo> branchs = BranchInfo.$findAll(BranchInfo)
+
+                        def qb =  query.branch != ""
+                        if(qb) {
+                            branchs = branchs.findAll { it.identifier == query.branch }
+                        }
+
+                        devices = devices.findAll {
+                            def ok = false;
+                            branchs.each { b ->
+                               def match = b.deviceIds.contains(it.identifier)
+                                if(match) {
+                                    ok = true
+                                    it.createBy = b.name
+                                }
+                            }
+                            return ok
+                        }
+
+                        devices = devices.sort { it.createBy }
+
+                        def map = new HashMap()
+                        map.columnNames = report.columnNames
+                        map.touchInfos = report.touchInfos
+                        map.pirInfos = report.pirInfos
+                        map.devices = devices
+                        devices.each {
+                            it.identifier = it._id.toString()
+                        }
+
+                        def jsonString = BaseEntity.$toJson(map)
+                        request.response().end(jsonString);
+                    }
+                })
+            }
+        }
     }
 
     @Override
@@ -81,7 +142,9 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         return null
     }
 
-    private void queryYearly(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir, ReturnObject returnObject) {
+    private ReturnObject queryYearly(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir) {
+
+        def returnObject = new ReturnObject()
 
         // touch
         ds.field("year").greaterThanOrEq(query.yearlyFrom)
@@ -91,36 +154,38 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         pir.field("year").greaterThanOrEq(query.yearlyFrom)
         pir.field("year").lessThanOrEq(query.yearlyTo)
 
-//        // touch
-//        ds.field("hour").greaterThanOrEq(query.timeFrom)
-//        ds.field("hour").lessThanOrEq(query.timeTo)
-//
-//        // pir
-//        pir.field("hour").greaterThanOrEq(query.timeFrom)
-//        pir.field("hour").lessThanOrEq(query.timeTo)
-
         // touch
         def result = ds.findAll().toList()
-        def group = result.groupBy { it.year }
-
         def pirResult = pir.findAll().toList()
-        def pirGroup = pirResult.groupBy { it.year }
 
-        (query.yearlyFrom..query.yearlyTo).each { year ->
+        if (query.groupByTime) {
+            returnObject = groupByTime(query, result, pirResult)
 
-            def count = 0;
-            if (group.containsKey(year)) count = group[year].count { it }
+        } else {
+            def pirGroup = pirResult.groupBy { it.year }
+            def group = result.groupBy { it.year }
 
-            returnObject.columns.add(year.toString())
-            returnObject.touchDatas.add(count)
+            (query.yearlyFrom..query.yearlyTo).each { year ->
 
-            def pirCount = 0;
-            if (pirGroup.containsKey(year)) pirCount = pirGroup[year].count { it }
-            returnObject.passDatas.add(pirCount)
+                def touchs = [], pirs = [];
+
+                if (group.containsKey(year)) touchs = group[year]
+                if (pirGroup.containsKey(year)) pirs = pirGroup[year]
+
+                def key =  year.toString()
+
+                returnObject.columnNames.add(year.toString())
+                returnObject.pirInfos.put(key, pirs)
+                returnObject.touchInfos.put(key, touchs)
+            }
         }
+
+        returnObject
     }
 
-    private void queryMonthly(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir, ReturnObject returnObject) {
+    private ReturnObject queryMonthly(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir) {
+
+        def returnObject = new ReturnObject();
 
         // touch
         ds.field("month").greaterThanOrEq(query.monthlyFrom)
@@ -130,41 +195,70 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         pir.field("month").greaterThanOrEq(query.monthlyFrom)
         pir.field("month").lessThanOrEq(query.monthlyTo)
 
-//        // touch
-//        ds.field("hour").greaterThanOrEq(query.timeFrom)
-//        ds.field("hour").lessThanOrEq(query.timeTo)
-//
-//        // pir
-//        pir.field("hour").greaterThanOrEq(query.timeFrom)
-//        pir.field("hour").lessThanOrEq(query.timeTo)
-
-        // touch
         def result = ds.findAll().toList()
-        def group = result.groupBy { it.month }
-
-        // pir
         def pirResult = pir.findAll().toList()
-        def pirGroup = pirResult.groupBy { it.month }
 
-        (query.monthlyFrom..query.monthlyTo).each { month ->
-            def d = new Date(2000, month, 10)
+        if (query.groupByTime) {
 
-            def format = new SimpleDateFormat("MMMM")
-            def text = format.format(d)
+            returnObject = groupByTime(query, result, pirResult)
 
-            def count = 0;
-            if (group.containsKey(month)) count = group[month].count { it }
+        } else {
 
-            returnObject.columns.add(text)
-            returnObject.touchDatas.add(count);
+            def group = result.groupBy { it.month }
+            def pirGroup = pirResult.groupBy { it.month }
 
-            def pirCount = 0;
-            if (pirGroup.containsKey(month)) pirCount = pirGroup[month].count { it }
-            returnObject.passDatas.add(pirCount)
+            (query.monthlyFrom..query.monthlyTo).each { month ->
+                def d = new Date(2000, month, 10)
+
+                def format = new SimpleDateFormat("MMMM")
+                def text = format.format(d)
+
+                def count = [], pirCount = [];
+                if (group.containsKey(month)) count = group[month]
+                if (pirGroup.containsKey(month)) pirCount = pirGroup[month]
+
+                returnObject.columnNames.add(text)
+                returnObject.touchInfos.put(text, count)
+                returnObject.pirInfos.put(text, pirCount)
+            }
         }
+
+        returnObject
     }
 
-    private void queryDaliy(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir, ReturnObject returnObject) {
+    private def  ReturnObject groupByTime(QueryInfo query, List<TouchInfo> result, List<PIRInfo> pirResult) {
+
+        def returnObject = new ReturnObject()
+
+        def group = result.groupBy { it.hour }
+        def pirGroup = pirResult.groupBy { it.hour }
+
+        (query.timeFrom..query.timeTo).each { time ->
+
+            def totals = [], pirTotals = [];
+            if (group.containsKey(time)) totals = group[time]
+            if (pirGroup.containsKey(time)) pirTotals = pirGroup[time]
+
+            def form = { t ->
+                if (t == 25) t = 1;
+                def text = String.format("%02d.00", t)
+                text
+            }
+
+            def text = form(time) + " - " + form(time + 1)
+
+            returnObject.columnNames.add(text);
+            returnObject.touchInfos.put(text, totals)
+            returnObject.pirInfos.put(text,pirTotals)
+        }
+
+        returnObject
+    }
+
+    def ReturnObject queryDaliy(QueryInfo query, Query<TouchInfo> ds, Query<PIRInfo> pir) {
+
+        def returnObject = new ReturnObject();
+
         boolean year = query.dailyYear != -1;
         boolean month = query.dailyMonth != -1;
 
@@ -180,48 +274,45 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
             pir.field("month").equal(query.dailyMonth)
         }
 
-
-        // start query
         def result = ds.findAll().toList()
-        def group = result.groupBy { touch -> touch.date }
-
         def pirResult = pir.findAll().toList()
-        def pirGroup = pirResult.groupBy { it.date }
 
-        // find number of days in month (of year)
-        def c = Calendar.getInstance();
-        def d = new Date(query.dailyYear, query.dailyMonth, 10)
-        c.setTime(d)
-        def numberOfDays = c.getActualMaximum(Calendar.DATE)
+        if (query.groupByTime) {
+            returnObject = groupByTime(query, result, pirResult)
 
-        // get total touch for each day
-        (1..numberOfDays).each { day ->
+        } else {
 
-            // add columns
-            returnObject.columns.add(day)
+            def group = result.groupBy { it.date }
+            def pirGroup = pirResult.groupBy { it.date }
+            def c = Calendar.getInstance();
+            def d = new Date(query.dailyYear, query.dailyMonth, 10)
+            c.setTime(d)
 
-            // add touch data
-            def totals = 0
-            if (group.containsKey(day)) totals = group[day].count { it }
-            returnObject.touchDatas.add(totals)
+            def numberOfDays = c.getActualMaximum(Calendar.DATE)
+            (1..numberOfDays).each { day ->
 
-            // add pass data
-            def pirTotals = 0;
-            if (pirGroup.containsKey(day)) pirTotals = pirGroup[day].count { it }
-            returnObject.passDatas.add(pirTotals)
+                def totals = [], pirTotals = []
+                if (group.containsKey(day)) totals = group[day];
+                if (pirGroup.containsKey(day)) pirTotals = pirGroup[day];
+
+                def key =  day.toString()
+
+                returnObject.columnNames.add(key);
+                returnObject.touchInfos.put(key, totals)
+                returnObject.pirInfos.put(key, pirTotals)
+            }
         }
 
-        // debug output
-        def jsonString = BaseEntity.$toJson(result);
-        Console.println(jsonString)
+        returnObject
+
     }
 
-    private Object coarseCompareReport(QueryInfo query) {
+    private ReturnObject queryReport(QueryInfo query) {
 
         // Create return object...
-        // * columns = graph's columns
-        // * touchDatas = Bar A
-        // * passDatas = Bar B
+        // * columnNames = graph's columnNames
+        // * touchInfos = Bar A
+        // * pirInfos = Bar B
         def returnObject = new ReturnObject()
 
         // Get static logger from vert.x
@@ -230,8 +321,8 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 
         // Get connector instance for query DB.
         def connector = Connector.getInstance()
-        def ds = connector.datastore.createQuery(TouchInfo)
-        def pir = connector.datastore.createQuery(PIRInfo)
+        def touchDs = connector.datastore.createQuery(TouchInfo)
+        def pirDs = connector.datastore.createQuery(PIRInfo)
 
         // Get list of information.
         List<CategoryInfo> categories = CategoryInfo.$findAll(CategoryInfo);
@@ -251,11 +342,12 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 
         // append time condition
         if (time) {
-            ds.field("hour").greaterThanOrEq(query.timeFrom)
-            ds.field("hour").lessThanOrEq(query.timeTo)
 
-            pir.field("hour").greaterThanOrEq(query.timeFrom)
-            pir.field("hour").lessThanOrEq(query.timeTo)
+            touchDs.field("hour").greaterThanOrEq(query.timeFrom)
+            touchDs.field("hour").lessThanOrEq(query.timeTo)
+
+            pirDs.field("hour").greaterThanOrEq(query.timeFrom)
+            pirDs.field("hour").lessThanOrEq(query.timeTo)
         }
 
         // Add branch condition
@@ -269,10 +361,10 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 
             BranchInfo b = branchs.find { it._id.toString() == query.branch }
             def devices = b.deviceIds;
-            ds.field("deviceId").in(devices);
+            touchDs.field("deviceId").in(devices);
 
             // pir
-            pir.field("deviceId").in(devices);
+            pirDs.field("deviceId").in(devices);
         }
 
         // Filter category B
@@ -287,7 +379,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 
             // Find all product under X
             def productIds = products.findAll { ids.contains(it.categoryIds[0]) }.collect { it._id }
-            ds.field("_id").in(productIds);
+            touchDs.field("_id").in(productIds);
 
             if (catC) {
 
@@ -300,17 +392,17 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                     logger.info("Filter <Product>")
                     logger.info(">> $query.product")
 
-                    ds.field("objectId").equal(product);
+                    touchDs.field("objectId").equal(product);
                 }
             }
         }
 
         if (query.queryType == "Daily") {
-            queryDaliy(query, ds, pir, returnObject)
+            returnObject = queryDaliy(query, touchDs, pirDs)
         } else if (query.queryType == "Monthly") {
-            queryMonthly(query, ds, pir, returnObject)
+            returnObject = queryMonthly(query, touchDs, pirDs)
         } else if (query.queryType == "Yearly") {
-            queryYearly(query, ds, pir, returnObject)
+            returnObject = queryYearly(query, touchDs, pirDs)
         }
 
         return returnObject;
@@ -318,7 +410,8 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 }
 
 class ReturnObject {
-    List<String> columns = new ArrayList<String>();
-    List<Number> touchDatas = new ArrayList<Number>();
-    List<Number> passDatas = new ArrayList<Number>();
+
+    List<String> columnNames = new ArrayList<String>();
+    Map<String,List<TouchInfo>> touchInfos = new HashMap<>()
+    Map<String,List<PIRInfo>> pirInfos = new HashMap<>()
 }

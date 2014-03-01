@@ -31,7 +31,9 @@ public class QueryInfo {
     String product;
     String branch;
 
-    public static  QueryInfo fromJson(String json){
+    boolean groupByTime;
+
+    public static  QueryInfo $fromJson(String json){
         QueryInfo info = BaseEntity.$fromJson(json)
         return info;
     }
