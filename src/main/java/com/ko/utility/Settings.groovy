@@ -21,7 +21,6 @@ class Settings {
     private static String _uploadPath
 
     private static String _touchHost
-    private static String _touchUri
     private static int _touchPort
 
     public static enum UploadType { IMAGE , VIDEO }
@@ -37,7 +36,6 @@ class Settings {
 
         _touchHost = settings.touchHost
         _touchPort = settings.touchPort
-        _touchUri = settings.touchUri
     }
 
     def static Object loadSetting(){
@@ -71,10 +69,6 @@ class Settings {
 
     def static String getTouchHost(){
         return _touchHost
-    }
-
-    def static String getTouchUri(){
-        return _touchUri
     }
 
     def static int getTouchPort(){

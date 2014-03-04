@@ -3,8 +3,6 @@
     "dbName" : "EMenuSystems",
     "dbPort" : 27017,
     "uploadPath" : "/home/recovery/sources/emenu/VertxService/upload/Dropbox/emenu/images",
-
-    "touchPort" : 8080,
-    "touchHost" : "10.0.0.67",
-    "touchUri" : "/touchs"
+    "touchPort" : 80,
+    "touchHost" : "collector-pacific.rhcloud.com"
 }

@@ -76,7 +76,6 @@ class TouchHandler implements HandlerPrototype {
     }
 
 
-
     @Override
     Handler<HttpServerRequest> $upload() {
         return null
@@ -107,7 +106,9 @@ class TouchHandler implements HandlerPrototype {
                     @Override
                     void handle(HttpClientResponse httpClientResponse) {
 
-                        httpClientResponse.dataHandler(new Handler<Buffer>(){
+                        def message = "";
+
+                        httpClientResponse.dataHandler(new Handler<Buffer>() {
                             @Override
 
                             void handle(Buffer buffer) {
@@ -117,14 +118,21 @@ class TouchHandler implements HandlerPrototype {
                                 _logger.info(data)
                                 _logger.info(data.length())
 
+                                message += data;
+                            }
+                        });
 
-                                def touchs = util.processTouchObject(data);
+                        httpClientResponse.endHandler(new Handler<Void>() {
+                            @Override
+                            void handle(Void aVoid) {
+
+                                def touchs = util.processTouchObject(message);
 
                                 // return all processed info... to caller
                                 def infos = BaseEntity.$toJson(touchs)
                                 request.response().end(infos)
                             }
-                        });
+                        })
                     }
                 })
 

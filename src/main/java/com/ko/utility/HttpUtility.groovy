@@ -8,8 +8,8 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.vertx.java.core.Vertx
 import org.vertx.java.core.http.HttpClient
+import org.vertx.java.core.logging.Logger
 
-import javax.management.remote.rmi._RMIConnection_Stub
 import java.text.SimpleDateFormat
 
 class HttpUtility {
@@ -20,6 +20,7 @@ class HttpUtility {
 
     private Vertx _vertx
     private Endpoint _endpoint = Endpoint.Pirs
+    private Logger _logger = StaticLogger.logger()
 
     public HttpUtility(Endpoint endpoint, Vertx vertx) {
         this._vertx = vertx
@@ -32,10 +33,20 @@ class HttpUtility {
         def touchPort = Settings.getTouchPort()
         def touchHost = Settings.getTouchHost()
 
+        // SetHost() failed if http://collector-pacific.rhcloud.com
+        // * it should by @ collector-pacific.rhcloud.com
+        // * https://groups.google.com/forum/#!topic/vertx/Jqm_GMc0GFY
+        // * He say http url != domain name
+
         def client = this._vertx.createHttpClient()
         client.setPort(touchPort)
         client.setHost(touchHost)
+        //client.setSSL(true)
         client.setKeepAlive(false)
+
+        _logger.info("Create Http Client ...")
+        _logger.info("Port : $touchPort")
+        _logger.info("host : $touchHost")
 
         return client;
     }
@@ -73,7 +84,6 @@ class HttpUtility {
 
             def collectId = it._id.toString()
 
-
             it.remove("_id")
 
             def pirString = JsonOutput.toJson(it)
@@ -96,7 +106,6 @@ class HttpUtility {
         List<HashMap> touchs = new JsonSlurper().parseText(data)
         touchs.each {
 
-
             def  collectId = it._id.toString()
 
             // remove _id from remote
@@ -114,7 +123,6 @@ class HttpUtility {
 
             touch.$save()
         }
-
         return touchs
     }
 

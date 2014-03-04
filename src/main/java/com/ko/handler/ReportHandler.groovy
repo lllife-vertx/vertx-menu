@@ -12,6 +12,7 @@ import com.ko.model.TouchInfo
 import com.ko.model.client.QueryInfo
 import com.ko.utility.HeaderUtility
 import com.ko.utility.StaticLogger
+import org.bson.types.ObjectId
 import org.vertx.java.core.Handler
 import org.vertx.java.core.buffer.Buffer
 import org.vertx.java.core.http.HttpServerRequest
@@ -57,9 +58,14 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                         // Omit touch infos && pir infos
                         // Because not need in chart...
                         def value = new HashMap()
-                        value.totalTouchs = result.touchInfos.collect { it.value.size() }
-                        value.totalPirs = result.pirInfos.collect { it.value.size() }
                         value.columnNames = result.columnNames
+                        value.totalTouchs = []
+                        value.totalPirs = []
+
+                        result.columnNames.each { c ->
+                            value.totalTouchs.add(result.touchInfos[c].size())
+                            value.totalPirs.add(result.pirInfos[c].size())
+                        }
 
                         def returnJson = BaseEntity.$toJson(value)
                         request.response().end(returnJson);
@@ -69,7 +75,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         };
     }
 
-    Handler<HttpServerRequest> $querySummary(){
+    Handler<HttpServerRequest> $querySummary() {
         return new Handler<HttpServerRequest>() {
 
             @Override
@@ -91,16 +97,16 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                         List<DeviceInfo> devices = DeviceInfo.$findAll(DeviceInfo)
                         List<BranchInfo> branchs = BranchInfo.$findAll(BranchInfo)
 
-                        def qb =  query.branch != ""
-                        if(qb) {
+                        def qb = query.branch != ""
+                        if (qb) {
                             branchs = branchs.findAll { it.identifier == query.branch }
                         }
 
                         devices = devices.findAll {
                             def ok = false;
                             branchs.each { b ->
-                               def match = b.deviceIds.contains(it.identifier)
-                                if(match) {
+                                def match = b.deviceIds.contains(it.identifier)
+                                if (match) {
                                     ok = true
                                     it.createBy = b.name
                                 }
@@ -172,9 +178,9 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                 if (group.containsKey(year)) touchs = group[year]
                 if (pirGroup.containsKey(year)) pirs = pirGroup[year]
 
-                def key =  year.toString()
+                def key = year.toString()
 
-                returnObject.columnNames.add(year.toString())
+                returnObject.columnNames.add(key)
                 returnObject.pirInfos.put(key, pirs)
                 returnObject.touchInfos.put(key, touchs)
             }
@@ -226,7 +232,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         returnObject
     }
 
-    private def  ReturnObject groupByTime(QueryInfo query, List<TouchInfo> result, List<PIRInfo> pirResult) {
+    private def ReturnObject groupByTime(QueryInfo query, List<TouchInfo> result, List<PIRInfo> pirResult) {
 
         def returnObject = new ReturnObject()
 
@@ -249,7 +255,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 
             returnObject.columnNames.add(text);
             returnObject.touchInfos.put(text, totals)
-            returnObject.pirInfos.put(text,pirTotals)
+            returnObject.pirInfos.put(text, pirTotals)
         }
 
         returnObject
@@ -295,7 +301,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
                 if (group.containsKey(day)) totals = group[day];
                 if (pirGroup.containsKey(day)) pirTotals = pirGroup[day];
 
-                def key =  day.toString()
+                def key = day.toString()
 
                 returnObject.columnNames.add(key);
                 returnObject.touchInfos.put(key, totals)
@@ -328,6 +334,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         List<CategoryInfo> categories = CategoryInfo.$findAll(CategoryInfo);
         List<ProductInfo> products = ProductInfo.$findAll(ProductInfo);
         List<BranchInfo> branchs = BranchInfo.$findAll(BranchInfo);
+        List<DeviceInfo> devices = DeviceInfo.$findAll(DeviceInfo);
 
         // Check filter to apply with query
         // brach = filter device in branh
@@ -339,6 +346,10 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         boolean catC = query.categoryC != ""
         boolean product = query.product != ""
         boolean time = (query.timeFrom != -1) || (query.timeTo != -1)
+
+        // focus only product
+        // and ignore all category
+        touchDs.field("objectType").equals("Product")
 
         // append time condition
         if (time) {
@@ -360,8 +371,9 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
             logger.info(">> $query.branch")
 
             BranchInfo b = branchs.find { it._id.toString() == query.branch }
-            def devices = b.deviceIds;
-            touchDs.field("deviceId").in(devices);
+            def deviceIds = b.deviceIds;
+            def serials = devices.find { deviceIds.contains(it._id.toString()) }.collect { it.serialNumber }
+            touchDs.field("deviceId").in(serials);
 
             // pir
             pirDs.field("deviceId").in(devices);
@@ -370,29 +382,29 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         // Filter category B
         if (catB) {
 
-            logger.info("Filter <CategoryB>")
-            logger.info(">> $query.categoryB")
+            def defaultId =  "000000000000000000000000";
 
             // Find all category X under B
             def underB = categories.findAll { it.parentId == query.categoryB };
             List<String> ids = underB.collect { it._id.toString() }
+            ids.add(defaultId)
 
             // Find all product under X
-            def productIds = products.findAll { ids.contains(it.categoryIds[0]) }.collect { it._id }
-            touchDs.field("_id").in(productIds);
+            def productIds = products.findAll { ids.contains(it.categoryIds[0]) }.collect { it._id.toString() }
+            productIds.add(defaultId)
+            touchDs.field("objectId").in(productIds)
 
             if (catC) {
 
-                logger.info("Filter <CategoryC>")
-                logger.info(">> $query.categoryC")
+                def productsUnderC = products.findAll { it.categoryIds[0] == query.categoryC }.collect { it._id.toString() }
+                productsUnderC.add(defaultId)
+                touchDs.field("objectId").in(productsUnderC)
 
                 // Add product condition...
                 if (product) {
 
-                    logger.info("Filter <Product>")
-                    logger.info(">> $query.product")
-
-                    touchDs.field("objectId").equal(product);
+                    def productId = query.product
+                    touchDs.field("objectId").equal(productId);
                 }
             }
         }
@@ -412,6 +424,6 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
 class ReturnObject {
 
     List<String> columnNames = new ArrayList<String>();
-    Map<String,List<TouchInfo>> touchInfos = new HashMap<>()
-    Map<String,List<PIRInfo>> pirInfos = new HashMap<>()
+    Map<String, List<TouchInfo>> touchInfos = new HashMap<>()
+    Map<String, List<PIRInfo>> pirInfos = new HashMap<>()
 }

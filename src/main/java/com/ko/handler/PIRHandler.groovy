@@ -26,17 +26,28 @@ class PIRHandler  implements HandlerPrototype<com.ko.handler.PIRHandler>{
                 def client = util.createClient()
                 def path = util.getQueryUrl()
 
+                logger.info("Connect: $path");
+
                 def post = client.post(path, new Handler<HttpClientResponse>() {
                     @Override
                     void handle(HttpClientResponse httpClientResponse) {
+
+                        def message = ""
+
                         httpClientResponse.dataHandler(new Handler<Buffer>(){
 
                             @Override
                             void handle(Buffer buffer) {
-
                                 def body = buffer.getString(0, buffer.length())
-                                def object = util.processPIRObject(body)
+                                message += body;
+                            }
+                        })
 
+                        httpClientResponse.endHandler(new Handler<Void>() {
+                            @Override
+                            void handle(Void aVoid) {
+
+                                def object = util.processPIRObject(message)
                                 def jsonString = BaseEntity.$toJson(object)
                                 request.response().end(jsonString)
                             }
