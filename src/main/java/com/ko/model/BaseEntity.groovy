@@ -3,7 +3,6 @@ package com.ko.model
 import com.google.code.morphia.annotations.Id
 import com.google.code.morphia.annotations.Transient
 import com.google.code.morphia.query.UpdateOperations
-import com.google.gson.Gson
 import com.ko.utility.StaticLogger
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -17,42 +16,68 @@ import java.text.SimpleDateFormat
  */
 class BaseEntity<T> implements Serializable {
 
-    // default logger from vert.x
+    /**
+     * Default class logger.
+     * User logger from vert.x
+     */
     @Transient
     private static Logger _logger = StaticLogger.logger()
 
-    // unique mongo id
+    /**
+     * Unique mongodb id.
+     */
     @Id
     ObjectId _id
 
-    // _id shadow as string
+    /**
+     * Object identifier reflect from _id.
+     */
     @Transient
     String identifier
 
-    // archive infomation include date and status
+    /**
+     *  Archive data (hide this object from client access).
+     */
     Date archiveDate;
     boolean archive = false;
 
-    // delete infomation
+    /**
+     * Delete date.
+     */
     Date deleteDate;
     boolean delete = false;
 
-    // create information
+    /**
+     * Create date.
+     */
     Date createDate // = Calendar.getInstance().getTime();
     String createBy;
 
-    // update infomation
+    /**
+     * Update date.
+     */
     Date lastUpdate // = Calendar.getInstance().getTime();
     String updateBy;
 
-    // default db connector
+    /**
+     * Default database connector.
+     */
     @Transient
     protected static Connector _connector = Connector.getInstance()
 
+    /**
+     * Get update operation object.
+     * @param cls
+     * @return
+     */
     def UpdateOperations getUpdateOps(Class cls) {
         return _connector.getDatastore().createUpdateOperations(cls)
     }
 
+    /**
+     * Save entity object into database.
+     * @return
+     */
     def Result $save() {
         try {
             if (this._id == null) {
@@ -60,7 +85,6 @@ class BaseEntity<T> implements Serializable {
             } else {
                 // def fmt = "2014-02-03T07:56:14+0000"
                 def dateForm = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-                //this.createDate =
             }
 
             this.lastUpdate = Calendar.getInstance().getTime();
@@ -74,6 +98,11 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Delete current object from database.
+     * @param cls
+     * @return
+     */
     def Result $remove(Class cls) {
         def rs = _connector.getDatastore().delete(this);
 
@@ -84,6 +113,11 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Find all given entity class from database.
+     * @param cls
+     * @return
+     */
     def static <T> List<T> $findAll(Class cls) {
 
         _logger.trace("Find All: " + cls.name)
@@ -104,6 +138,12 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Find object by id.
+     * @param cls
+     * @param id
+     * @return
+     */
     def static Object $findById(Class cls, ObjectId id) {
 
 //        _logger.info("Find By Id:" + id.toString())
@@ -116,6 +156,12 @@ class BaseEntity<T> implements Serializable {
         return entry
     }
 
+    /**
+     * Query entity class by given conditions.
+     * @param cls
+     * @param condition
+     * @return
+     */
     def static <T> T $queryBy(Class cls, HashMap<String, Object> condition) {
 
         def db = _connector.getDatastore()
@@ -131,6 +177,11 @@ class BaseEntity<T> implements Serializable {
         con.get()
     }
 
+    /**
+     * Find single entity class by example.
+     * @param example
+     * @return
+     */
     def static <T> T $findByExample(T example) {
         try {
 
@@ -149,16 +200,30 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Find all entity class by example.
+     * @param example
+     * @return
+     */
     def static <T> T $findAllByExample(T example) {
         def rs = _connector.getDatastore().queryByExample(example).asList()
         rs.each { BaseEntity c -> c.identifier = c._id.toString() }
         return rs;
     }
 
+    /**
+     * Convert current object into json string.
+     * @return
+     */
     def String $toJson() {
         return $toJson(this);
     }
 
+    /**
+     * Convert arbitrary object into json string.
+     * @param obj
+     * @return
+     */
     def static String $toJson(Object obj) {
 
         def out = JsonOutput.toJson(obj)
@@ -172,6 +237,11 @@ class BaseEntity<T> implements Serializable {
         return out
     }
 
+    /**
+     * Parse date string into native java date.
+     * @param obj
+     * @param name
+     */
     def static void pareDate(Object obj, String name) {
         try {
             // Parse date string int java native date
@@ -193,6 +263,11 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Convert json string into dynamic object.
+     * @param json
+     * @return
+     */
     def static Object $fromJson(String json) {
         //def obj = JSON.parse(json)
         //removeExtraProperty(obj)
@@ -217,6 +292,10 @@ class BaseEntity<T> implements Serializable {
         return obj;
     }
 
+    /**
+     * Remove unneed extra property from object.
+     * @param rs
+     */
     def private static removeExtraProperty(HashMap rs) {
         def itor = rs.entrySet().iterator()
         while (itor.hasNext()) {
@@ -230,6 +309,11 @@ class BaseEntity<T> implements Serializable {
         }
     }
 
+    /**
+     * Convert json into object using JsonSlurper (groovy class).
+     * @param json
+     * @return
+     */
     def static Object $fromJsonSluper(String json) {
 //        json = json.replaceAll("\\\$\\\$hashKey", "xxx")
 

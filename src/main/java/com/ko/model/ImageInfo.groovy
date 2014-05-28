@@ -5,7 +5,7 @@ import com.google.code.morphia.annotations.Entity
 /**
  * Created by recovery on 12/29/13.
  */
-@Entity("ImageInfo")
+@Entity("MenuImageInfo")
 class ImageInfo extends BaseEntity<ImageInfo> {
     String title;
     String type;

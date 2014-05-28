@@ -70,7 +70,6 @@ class PIRHandler  implements HandlerPrototype<com.ko.handler.PIRHandler>{
         }
     }
 
-
     @Override
     Handler<HttpServerRequest> $all() {
         return null

@@ -20,8 +20,11 @@ cp -fr "$report_source" "$report_production"
 echo "scp .zip ..."
 sshpass -p '1234' scp target/VertxService-1.0-SNAPSHOT-mod.zip "$host:emenu/black"
 
-sed -i 's/10.0.0.67:8877/192.168.0.106:8877/g' "$system_production"/js/final.js
-sed -i 's/10.0.0.67:8877/192.168.0.106:8877/g' "$report_production"/js/final.js
+#sed -i 's/10.0.0.67:8877/192.168.0.106:8877/g' "$system_production"/js/final.js
+#sed -i 's/10.0.0.67:8877/192.168.0.106:8877/g' "$report_production"/js/final.js
+
+sed -i 's/10.0.0.67:8877/emenu.ecmxpert.com:8877/g' "$system_production"/js/final.js
+sed -i 's/10.0.0.67:8877/emenu.ecmxpert.com:8877/g' "$report_production"/js/final.js
 
 sed -i 's/http:\/\/10.0.0.67:35729\/livereload.js//g' "$system_production"/index.html
 sed -i 's/http:\/\/10.0.0.67:8888\/livereload.js//g' "$system_production"/index.html

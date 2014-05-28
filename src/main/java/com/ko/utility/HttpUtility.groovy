@@ -3,6 +3,7 @@ package com.ko.utility
 import com.ko.model.BaseEntity
 import com.ko.model.Connector
 import com.ko.model.PIRInfo
+import com.ko.model.SonicInfo
 import com.ko.model.TouchInfo
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -15,7 +16,7 @@ import java.text.SimpleDateFormat
 class HttpUtility {
 
     public static enum Endpoint {
-        Touchs, Pirs
+        Touchs, Pirs, Sonics
     }
 
     private Vertx _vertx
@@ -37,7 +38,6 @@ class HttpUtility {
         // * it should by @ collector-pacific.rhcloud.com
         // * https://groups.google.com/forum/#!topic/vertx/Jqm_GMc0GFY
         // * He say http url != domain name
-
         def client = this._vertx.createHttpClient()
         client.setPort(touchPort)
         client.setHost(touchHost)
@@ -54,8 +54,10 @@ class HttpUtility {
     public String getQueryUrl() {
         if (_endpoint == Endpoint.Pirs) {
             "/pirs/query"
-        } else {
+        } else if(_endpoint == Endpoint.Touchs) {
             "/touchs/query"
+        } else {
+            "/sonics/query"
         }
     }
 
@@ -77,24 +79,41 @@ class HttpUtility {
         info.second = c.get(Calendar.MINUTE)
     }
 
+    /**
+     * Process sonic json string from sensor api.
+     * @param data
+     * @return
+     */
+    public Object processSonicObject(String data) {
+        List<HashMap> sonics = new JsonSlurper().parseText(data);
+        sonics.each {
+            def collectId = it._id.toString()
+            it.remove("_id")
+            def sonicString = JsonOutput.toJson(it)
+            SonicInfo info = BaseEntity.$fromJson(sonicString)
+            info.collectId = collectId
+            addToken(info, info.enterDate)
+            info.$save()
+        }
+        return  sonics
+    }
+
+    /**
+     * Process pir json string from sensor api.
+     * @param data
+     * @return
+     */
     public Object processPIRObject(String data){
         List<HashMap> pirs = new JsonSlurper().parseText(data)
-
         pirs.each {
-
             def collectId = it._id.toString()
-
             it.remove("_id")
-
             def pirString = JsonOutput.toJson(it)
             PIRInfo info = BaseEntity.$fromJson(pirString)
             info.collectId = collectId
-
             addToken(info, info.enterDate)
-
             info.$save()
         }
-
         return  pirs
     }
 
@@ -124,6 +143,27 @@ class HttpUtility {
             touch.$save()
         }
         return touchs
+    }
+
+    public String createSonicRequestString() {
+        def connector = Connector.getInstance()
+        def ds = connector.getDatastore()
+        def sonicInfo = ds.find(SonicInfo).order("-_id").get()
+
+        def request = new RequestObject()
+        request.id = ""
+        request.collectDate = ""
+
+        def lastEnter = new Date(20,1,1)
+        if(sonicInfo != null) {
+            lastEnter = sonicInfo.collectDate
+            request.id = sonicInfo.collectId
+        }
+
+        def dateString = createRequestDate(lastEnter)
+        request.collectDate = dateString
+        def requestString = BaseEntity.$toJson(request)
+        return requestString
     }
 
     public String createPIRRequestString(){

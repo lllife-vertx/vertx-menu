@@ -8,6 +8,7 @@ import com.ko.handler.MediaHandler
 import com.ko.handler.PIRHandler
 import com.ko.handler.ProductHandler
 import com.ko.handler.ReportHandler
+import com.ko.handler.SonicHandler
 import com.ko.handler.TestHandler
 import com.ko.handler.TouchHandler
 import com.ko.handler.UserHandler
@@ -63,10 +64,8 @@ class MainRouter extends RouteMatcher {
     }
 
     def registerUser(){
-
         def user = new UserHandler()
         this.post("/user/login", user.$login());
-
         def test = new TestHandler()
         this.get("/test/:name", test.$create())
     }
@@ -101,6 +100,11 @@ class MainRouter extends RouteMatcher {
         this.get("/pir/sync", pir.$sync(_vertx))
     }
 
+    def registerSonic() {
+        def sonic = new SonicHandler()
+        this.get("/sonic/sync", sonic.$sync(_vertx))
+    }
+
     private MainRouter(Vertx vertx) {
         super();
 
@@ -113,7 +117,8 @@ class MainRouter extends RouteMatcher {
         this.registerBranch()
         this.registerDevice()
         this.registerTouch()
-        this.registerPIR();
+        this.registerPIR()
+        this.registerSonic()
 
         this.registerReport()
 

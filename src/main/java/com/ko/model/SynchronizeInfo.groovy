@@ -1,8 +1,11 @@
 package com.ko.model
 
+import com.google.code.morphia.annotations.Entity
+
 /**
  * Created by recovery on 1/31/14.
  */
+@Entity("MenuSynchronizeInfo")
 class SynchronizeInfo extends BaseEntity<SynchronizeInfo> {
     int numberOfRecords;
 

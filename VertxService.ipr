@@ -787,30 +787,6 @@
         <root url="jar://$MAVEN_REPOSITORY$/xpp3/xpp3/1.1.4c/xpp3-1.1.4c-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Scala Compiler">
-      <CLASSES>
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-compiler.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-library.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-reflect.jar!/" />
-      </CLASSES>
-      <JAVADOC />
-      <SOURCES />
-    </library>
-    <library name="Scala Library">
-      <CLASSES>
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-library.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-swing.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/lib/scala-actors.jar!/" />
-      </CLASSES>
-      <JAVADOC>
-        <root url="file://$USER_HOME$/tools/scala/scala-2.11.0-M8/doc/scala-devel-docs/api" />
-      </JAVADOC>
-      <SOURCES>
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/src/scala-library-src.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/src/scala-swing-src.jar!/" />
-        <root url="jar://$USER_HOME$/tools/scala/scala-2.11.0-M8/src/scala-actors-src.jar!/" />
-      </SOURCES>
-    </library>
   </component>
 </project>
 

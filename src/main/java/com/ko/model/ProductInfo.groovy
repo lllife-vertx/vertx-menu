@@ -1,7 +1,11 @@
 package com.ko.model
+
+import com.google.code.morphia.annotations.Entity
+
 /**
  * Created by recovery on 12/29/13.
  */
+@Entity("MenuProductInfo")
 class ProductInfo extends BaseEntity<ProductInfo> {
     String name;
     String productId;

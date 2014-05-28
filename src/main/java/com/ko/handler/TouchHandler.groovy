@@ -25,7 +25,6 @@ import java.text.SimpleDateFormat
  */
 class TouchHandler implements HandlerPrototype {
 
-
     @Override
     Handler<HttpServerRequest> $all() {
         return new Handler<HttpServerRequest>() {
@@ -74,7 +73,6 @@ class TouchHandler implements HandlerPrototype {
             }
         }
     }
-
 
     @Override
     Handler<HttpServerRequest> $upload() {

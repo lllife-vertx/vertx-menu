@@ -2,6 +2,7 @@ package com.ko.model
 
 import com.google.code.morphia.Datastore
 import com.google.code.morphia.Morphia
+import com.google.code.morphia.annotations.Entity
 import com.ko.utility.Settings
 import com.mongodb.Mongo
 

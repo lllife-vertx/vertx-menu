@@ -21,7 +21,6 @@ public class QueryInfo {
     int dailyMonth;
     int dailyYear;
 
-
     // Daily, Monthly, Yearly
     String queryType = "Daily"
 
