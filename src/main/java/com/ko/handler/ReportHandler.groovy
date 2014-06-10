@@ -78,6 +78,7 @@ public class ReportHandler implements HandlerPrototype<com.ko.handler.ReportHand
         };
     }
 
+
     Handler<HttpServerRequest> $querySummary() {
         return new Handler<HttpServerRequest>() {
 

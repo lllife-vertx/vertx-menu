@@ -14,17 +14,19 @@ import java.text.SimpleDateFormat
 class Settings {
 
     private static Logger _logger = StaticLogger.logger()
-
     private static String _dbHost
     private static String _dbName
     private static int _dbPort
     private static String _uploadPath
-
     private static String _touchHost
     private static int _touchPort
+    private static String _staticPath
 
     public static enum UploadType { IMAGE , VIDEO }
 
+    /***
+     * Load setting file from local file system.
+     */
     static  {
 
        def settings = loadSetting()
@@ -36,8 +38,13 @@ class Settings {
 
         _touchHost = settings.touchHost
         _touchPort = settings.touchPort
+        _staticPath = settings.staticPath;
     }
 
+    /***
+     * Load setting file.
+     * @return
+     */
     def static Object loadSetting(){
         Path currentPath =  Paths.get("")
         def abs = currentPath.toAbsolutePath().toString()
@@ -52,18 +59,19 @@ class Settings {
         return obj;
     }
 
+    def static String getStaticPath() {
+        return _staticPath
+    }
+
     def static String getDbHost(){
-//        return "localhost"
         return _dbHost
     }
 
     def static String getDbName(){
-//        return "EMenuSystems"
         return _dbName
     }
 
     def static int getDbPort(){
-//        return 27017
         return _dbPort
     }
 
@@ -76,10 +84,15 @@ class Settings {
     }
 
     def static String getUploadPath() {
-//        def imagePath = "/home/recovery/sources/emenu/VertxService/upload";
-//        return imagePath
         return _uploadPath
     }
+
+    /***
+     * Create upload path.
+     * @param type - Type of content 'Image' or 'Video'.
+     * @param fileName - Original file name.
+     * @return - Absolute path.
+     */
     def static String createUploadPath(UploadType type, String fileName) {
 
         def imagePath = getUploadPath()
@@ -112,6 +125,11 @@ class Settings {
         return absoluteName;
     }
 
+    /***
+     * Get file extension without '.'.
+     * @param file
+     * @return
+     */
     def static String getFileExtension(String file){
 
         def extension = ""
@@ -120,7 +138,6 @@ class Settings {
         if(i > 1){
             extension = file.substring(i+1)
         }
-
         return extension
     }
 }

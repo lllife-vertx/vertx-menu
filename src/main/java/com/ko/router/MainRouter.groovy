@@ -12,10 +12,13 @@ import com.ko.handler.SonicHandler
 import com.ko.handler.TestHandler
 import com.ko.handler.TouchHandler
 import com.ko.handler.UserHandler
+import com.ko.utility.Settings
 import org.vertx.java.core.Handler
 import org.vertx.java.core.Vertx
 import org.vertx.java.core.http.HttpServerRequest
 import org.vertx.java.core.http.RouteMatcher
+
+import java.nio.file.Path
 
 /**
  * Created by recovery on 12/29/13.
@@ -125,8 +128,18 @@ class MainRouter extends RouteMatcher {
         this.noMatch(new Handler<HttpServerRequest>() {
             @Override
             void handle(HttpServerRequest request) {
-                request.response().statusCode = 404
-                request.response().end()
+                def staticPath = Settings.getStaticPath()
+                def path = request.path()
+                def fullPath = new File(new File(staticPath), path)
+
+                Console.println("Path:::" + fullPath.absolute)
+
+                if(fullPath.exists()){
+                    request.response().sendFile(fullPath.absolutePath)
+                }else {
+                    request.response().statusCode = 404
+                    request.response().end(path)
+                }
             }
         })
     }
